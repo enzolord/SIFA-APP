@@ -19,3 +19,9 @@ La commande `flutter create .` ajoute seulement le dossier `android/` ; elle ne 
 - `lib/screens/` : 5 onglets (Accueil, Historique, Scanner, Conseils, Profil) et écran de résultat
 
 Prochain sprint : caméra, modèle TFLite embarqué, stockage local, Supabase.
+
+## État du Sprint 1 (en cours)
+
+- Prise de photo (appareil ou galerie) via `image_picker`
+- `Classifier` : interface + `MockClassifier` (résultat factice, à remplacer par TFLite)
+- Historique en mémoire ; résultat avec conseils et avertissement légal

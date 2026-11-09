@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/analysis_store.dart';
 import '../widgets/sifa_mark.dart';
 import '../widgets/status_chip.dart';
 import 'result_screen.dart';
@@ -23,22 +24,32 @@ class HomeScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text('Photographiez une fiente pour vérifier la santé de votre bande.', style: t.bodyLarge),
         const SizedBox(height: 20),
-        Card(
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            title: Text('Dernière analyse', style: t.titleMedium),
-            subtitle: const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: StatusChip(SifaStatus.warn, 'Exemple – à surveiller'),
+        ListenableBuilder(
+          listenable: AnalysisStore.instance,
+          builder: (context, _) {
+            final d = AnalysisStore.instance.last;
+            return Card(
+              child: ListTile(
+                contentPadding: const EdgeInsets.all(16),
+                title: Text('Dernière analyse', style: t.titleMedium),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: d == null
+                      ? const Text('Aucune pour le moment. Touchez Scanner pour commencer.')
+                      : Align(
+                          alignment: Alignment.centerLeft,
+                          child: StatusChip(d.info.status, d.info.name),
+                        ),
+                ),
+                trailing: d == null ? null : const Icon(Icons.chevron_right),
+                onTap: d == null
+                    ? null
+                    : () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(builder: (_) => ResultScreen(diagnosis: d)),
+                        ),
               ),
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const ResultScreen()),
-            ),
-          ),
+            );
+          },
         ),
       ],
     );
