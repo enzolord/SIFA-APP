@@ -17,6 +17,7 @@ class ResultScreen extends StatelessWidget {
       SifaStatus.ok => 'Rien à signaler',
       SifaStatus.warn => 'À surveiller',
       SifaStatus.danger => 'À traiter',
+      SifaStatus.neutral => 'Information',
     };
     return Scaffold(
       appBar: AppBar(title: const Text('Résultat')),

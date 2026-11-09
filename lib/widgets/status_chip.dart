@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/colors.dart';
 
-enum SifaStatus { ok, warn, danger }
+enum SifaStatus { ok, warn, danger, neutral }
 
 /// Puce de gravité : icône + libellé, jamais la couleur seule.
 class StatusChip extends StatelessWidget {
@@ -16,6 +16,7 @@ class StatusChip extends StatelessWidget {
       SifaStatus.ok => (SifaColors.ok, SifaColors.okSoft, Icons.check_circle),
       SifaStatus.warn => (SifaColors.warn, SifaColors.warnSoft, Icons.error),
       SifaStatus.danger => (SifaColors.danger, SifaColors.dangerSoft, Icons.warning_rounded),
+      SifaStatus.neutral => (SifaColors.inkMuted, SifaColors.surfaceSunken, Icons.schedule),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
