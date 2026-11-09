@@ -22,6 +22,9 @@ Prochain sprint : caméra, modèle TFLite embarqué, stockage local, Supabase.
 
 ## État du Sprint 1 (en cours)
 
+- Parcours de démarrage : connexion (démo), ferme, consentement
+- Écran Conseils et remèdes depuis le résultat
+
 - Prise de photo (appareil ou galerie) via `image_picker`
 - `Classifier` : interface + `MockClassifier` (résultat factice, à remplacer par TFLite)
 - Historique en mémoire ; résultat avec conseils et avertissement légal

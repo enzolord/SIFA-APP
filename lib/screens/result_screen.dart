@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/diagnosis.dart';
 import '../widgets/disclaimer.dart';
+import 'remedes_screen.dart';
 import '../widgets/status_chip.dart';
 
 class ResultScreen extends StatelessWidget {
@@ -46,6 +47,14 @@ class ResultScreen extends StatelessWidget {
                   ),
               ]),
             ),
+          ),
+          const SizedBox(height: 16),
+          FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(54)),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => RemedesScreen(disease: diagnosis.disease)),
+            ),
+            child: const Text('Voir les conseils et remèdes'),
           ),
           const SizedBox(height: 16),
           const Disclaimer(),

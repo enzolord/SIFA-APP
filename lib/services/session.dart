@@ -1,0 +1,35 @@
+import 'package:flutter/foundation.dart';
+
+enum FlockType { broiler, layer }
+
+extension FlockTypeLabel on FlockType {
+  String get label => this == FlockType.broiler ? 'Poulets de chair' : 'Poules pondeuses';
+}
+
+/// État de session en mémoire (sera remplacé par Supabase + stockage local).
+class Session extends ChangeNotifier {
+  Session._();
+  static final instance = Session._();
+
+  bool onboarded = false;
+  String phone = '';
+  String farmName = '';
+  FlockType flockType = FlockType.broiler;
+  int headcount = 0;
+
+  String get farmLine => farmName.isEmpty ? flockType.label : '$farmName · ${flockType.label}';
+
+  void completeOnboarding({
+    required String phone,
+    required String farmName,
+    required FlockType type,
+    required int headcount,
+  }) {
+    this.phone = phone;
+    this.farmName = farmName;
+    flockType = type;
+    this.headcount = headcount;
+    onboarded = true;
+    notifyListeners();
+  }
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/analysis_store.dart';
+import '../services/session.dart';
 import '../widgets/sifa_mark.dart';
 import '../widgets/status_chip.dart';
 import 'result_screen.dart';
@@ -21,6 +22,8 @@ class HomeScreen extends StatelessWidget {
         ]),
         const SizedBox(height: 24),
         Text('Bonjour', style: t.displayMedium),
+        const SizedBox(height: 2),
+        Text(Session.instance.farmLine, style: t.bodyMedium),
         const SizedBox(height: 4),
         Text('Photographiez une fiente pour vérifier la santé de votre bande.', style: t.bodyLarge),
         const SizedBox(height: 20),
