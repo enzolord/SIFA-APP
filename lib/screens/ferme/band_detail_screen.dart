@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/farm_store.dart';
+import '../../services/session.dart';
 import '../../theme/colors.dart';
 import '../../widgets/kpi_card.dart';
 import 'entry_screen.dart';
