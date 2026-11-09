@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/farm_store.dart';
 import '../services/session.dart';
 import '../theme/colors.dart';
 import '../widgets/disclaimer.dart';
@@ -41,6 +42,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     if (_step < 2) {
       setState(() => _step++);
     } else {
+      FarmStore.instance.addBand('Bande 1', _type, int.parse(_count.text));
       Session.instance.completeOnboarding(
         phone: '+237 ${_phone.text.trim()}',
         farmName: _farm.text.trim(),

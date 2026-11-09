@@ -28,3 +28,4 @@ Prochain sprint : caméra, modèle TFLite embarqué, stockage local, Supabase.
 - Prise de photo (appareil ou galerie) via `image_picker`
 - `Classifier` : interface + `MockClassifier` (résultat factice, à remplacer par TFLite)
 - Historique en mémoire ; résultat avec conseils et avertissement légal
+- Ma ferme : bandes, saisie du jour (mortalité, aliment, eau, poids), stocks avec jours restants, finances (ventes, dépenses, marge), tâches — en mémoire pour l'instant

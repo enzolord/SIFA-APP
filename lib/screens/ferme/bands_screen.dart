@@ -1,0 +1,74 @@
+import 'package:flutter/material.dart';
+
+import '../../services/farm_store.dart';
+import '../../services/session.dart';
+import '../../theme/colors.dart';
+import '../../widgets/form_dialog.dart';
+import 'band_detail_screen.dart';
+
+class BandsScreen extends StatelessWidget {
+  const BandsScreen({super.key});
+
+  Future<void> _add(BuildContext context) async {
+    final v = await showFormDialog(context, title: 'Ajouter une bande', fields: const [
+      FieldSpec('Nom de la bande', hint: 'Bande B'),
+      FieldSpec('Nombre de volailles', number: true, hint: '500'),
+    ]);
+    if (v == null || v[0].isEmpty || toNum(v[1]) <= 0) return;
+    FarmStore.instance.addBand(v[0], Session.instance.flockType, toNum(v[1]).round());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return ListenableBuilder(
+      listenable: FarmStore.instance,
+      builder: (context, _) {
+        final s = FarmStore.instance;
+        return Scaffold(
+          appBar: AppBar(title: const Text('Mes bandes')),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _add(context),
+            icon: const Icon(Icons.add),
+            label: const Text('Ajouter une bande'),
+          ),
+          body: s.bands.isEmpty
+              ? const Center(child: Text('Aucune bande pour le moment.'))
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 96),
+                  children: [
+                    for (final b in s.bands)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Card(
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(builder: (_) => BandDetailScreen(band: b)),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(b.name, style: t.titleMedium),
+                                const SizedBox(height: 2),
+                                Text('${b.type.label} · jour ${b.day} · ${s.alive(b)} oiseaux', style: t.bodyMedium),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Mortalité ${s.mortalityPct(b).toStringAsFixed(1).replaceAll('.', ',')} %',
+                                  style: t.bodyMedium?.copyWith(
+                                    color: s.mortalityPct(b) > 2 ? SifaColors.danger : SifaColors.ok,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ]),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+        );
+      },
+    );
+  }
+}

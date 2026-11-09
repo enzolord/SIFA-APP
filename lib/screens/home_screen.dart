@@ -4,6 +4,7 @@ import '../services/analysis_store.dart';
 import '../services/session.dart';
 import '../widgets/sifa_mark.dart';
 import '../widgets/status_chip.dart';
+import 'ferme/ferme_hub.dart';
 import 'result_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -27,6 +28,19 @@ class HomeScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text('Photographiez une fiente pour vérifier la santé de votre bande.', style: t.bodyLarge),
         const SizedBox(height: 20),
+        Card(
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            leading: const Icon(Icons.agriculture),
+            title: Text('Ma ferme', style: t.titleMedium),
+            subtitle: const Text('Bandes, saisie du jour, stocks, finances, tâches'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const FermeHub()),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
         ListenableBuilder(
           listenable: AnalysisStore.instance,
           builder: (context, _) {
