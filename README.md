@@ -28,4 +28,5 @@ Prochain sprint : caméra, modèle TFLite embarqué, stockage local, Supabase.
 - Prise de photo (appareil ou galerie) via `image_picker`
 - `Classifier` : interface + `MockClassifier` (résultat factice, à remplacer par TFLite)
 - Historique en mémoire ; résultat avec conseils et avertissement légal
-- Ma ferme : bandes, saisie du jour (mortalité, aliment, eau, poids), stocks avec jours restants, finances (ventes, dépenses, marge), tâches — en mémoire pour l'instant
+- Ma ferme : bandes, saisie du jour (mortalité, aliment, eau, poids), stocks avec jours restants, finances (ventes, dépenses, marge), tâches
+- Sauvegarde locale : `sifa.json` et photos dans les documents de l'app (`lib/services/persistence.dart`), rechargées au démarrage

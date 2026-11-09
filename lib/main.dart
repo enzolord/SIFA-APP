@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 
 import 'screens/onboarding_flow.dart';
 import 'screens/shell.dart';
+import 'services/persistence.dart';
 import 'services/session.dart';
 import 'theme/theme.dart';
 
-void main() => runApp(const SifaApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Persistence.init();
+  runApp(const SifaApp());
+}
 
 class SifaApp extends StatelessWidget {
   const SifaApp({super.key});

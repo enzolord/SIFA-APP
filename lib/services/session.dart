@@ -19,6 +19,23 @@ class Session extends ChangeNotifier {
 
   String get farmLine => farmName.isEmpty ? flockType.label : '$farmName · ${flockType.label}';
 
+  Map<String, dynamic> toJson() => {
+        'onboarded': onboarded,
+        'phone': phone,
+        'farmName': farmName,
+        'flockType': flockType.index,
+        'headcount': headcount,
+      };
+
+  void restore(Map<String, dynamic> j) {
+    onboarded = j['onboarded'] as bool? ?? false;
+    phone = j['phone'] as String? ?? '';
+    farmName = j['farmName'] as String? ?? '';
+    flockType = FlockType.values[(j['flockType'] as int? ?? 0).clamp(0, FlockType.values.length - 1)];
+    headcount = j['headcount'] as int? ?? 0;
+    notifyListeners();
+  }
+
   void completeOnboarding({
     required String phone,
     required String farmName,

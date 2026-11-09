@@ -39,12 +39,21 @@ class Diagnosis {
     required this.confidence,
     required this.photo,
     DateTime? at,
+    this.photoPath,
   }) : at = at ?? DateTime.now();
 
   final Disease disease;
   final double confidence; // 0..1
   final Uint8List photo;
   final DateTime at;
+  String? photoPath;
 
   DiseaseInfo get info => diseaseInfo[disease]!;
+
+  Map<String, dynamic> toJson() => {
+        'disease': disease.index,
+        'confidence': confidence,
+        'photoPath': photoPath,
+        'at': at.toIso8601String(),
+      };
 }

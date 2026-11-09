@@ -26,4 +26,18 @@ void main() {
     expect(fcfa(1250000), '1 250 000');
     expect(fcfa(-412000), '-412 000');
   });
+
+  test('sérialisation aller-retour de la ferme', () {
+    final s = FarmStore.instance;
+    s.addBand('Z', FlockType.layer, 300);
+    final b = s.bands.last;
+    s.addEntry(DailyEntry(bandId: b.id, date: DateTime(2026, 11, 9), dead: 2, feedKg: 10.5));
+    s.addStock(StockItem(name: 'Maïs', qty: 80, unit: 'kg', dailyUse: 10));
+    s.addTask('Nettoyer', DateTime(2026, 11, 10));
+    final json = s.toJson();
+    final before = (s.bands.length, s.entries.length, s.stock.length, s.tasks.length);
+    s.restore(json);
+    expect((s.bands.length, s.entries.length, s.stock.length, s.tasks.length), before);
+    expect(s.alive(s.bands.last), 298);
+  });
 }

@@ -11,6 +11,22 @@ class Band {
   final DateTime arrival;
 
   int get day => DateTime.now().difference(arrival).inDays + 1;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'type': type.index,
+        'initialCount': initialCount,
+        'arrival': arrival.toIso8601String(),
+      };
+
+  factory Band.fromJson(Map<String, dynamic> j) => Band(
+        id: j['id'] as int,
+        name: j['name'] as String,
+        type: FlockType.values[j['type'] as int],
+        initialCount: j['initialCount'] as int,
+        arrival: DateTime.parse(j['arrival'] as String),
+      );
 }
 
 class DailyEntry {
@@ -21,6 +37,24 @@ class DailyEntry {
   final double feedKg;
   final double waterL;
   final double? avgWeightG;
+
+  Map<String, dynamic> toJson() => {
+        'bandId': bandId,
+        'date': date.toIso8601String(),
+        'dead': dead,
+        'feedKg': feedKg,
+        'waterL': waterL,
+        'avgWeightG': avgWeightG,
+      };
+
+  factory DailyEntry.fromJson(Map<String, dynamic> j) => DailyEntry(
+        bandId: j['bandId'] as int,
+        date: DateTime.parse(j['date'] as String),
+        dead: j['dead'] as int,
+        feedKg: (j['feedKg'] as num).toDouble(),
+        waterL: (j['waterL'] as num).toDouble(),
+        avgWeightG: (j['avgWeightG'] as num?)?.toDouble(),
+      );
 }
 
 class StockItem {
@@ -32,6 +66,15 @@ class StockItem {
 
   /// Jours restants si la consommation quotidienne est connue.
   int? get daysLeft => dailyUse > 0 ? (qty / dailyUse).floor() : null;
+
+  Map<String, dynamic> toJson() => {'name': name, 'qty': qty, 'unit': unit, 'dailyUse': dailyUse};
+
+  factory StockItem.fromJson(Map<String, dynamic> j) => StockItem(
+        name: j['name'] as String,
+        qty: (j['qty'] as num).toDouble(),
+        unit: j['unit'] as String,
+        dailyUse: (j['dailyUse'] as num).toDouble(),
+      );
 }
 
 class Txn {
@@ -41,6 +84,22 @@ class Txn {
   final double amount;
   final bool isSale;
   final String category;
+
+  Map<String, dynamic> toJson() => {
+        'date': date.toIso8601String(),
+        'label': label,
+        'amount': amount,
+        'isSale': isSale,
+        'category': category,
+      };
+
+  factory Txn.fromJson(Map<String, dynamic> j) => Txn(
+        date: DateTime.parse(j['date'] as String),
+        label: j['label'] as String,
+        amount: (j['amount'] as num).toDouble(),
+        isSale: j['isSale'] as bool,
+        category: j['category'] as String,
+      );
 }
 
 class FarmTask {
@@ -48,6 +107,14 @@ class FarmTask {
   final String title;
   final DateTime due;
   bool done;
+
+  Map<String, dynamic> toJson() => {'title': title, 'due': due.toIso8601String(), 'done': done};
+
+  factory FarmTask.fromJson(Map<String, dynamic> j) => FarmTask(
+        title: j['title'] as String,
+        due: DateTime.parse(j['due'] as String),
+        done: j['done'] as bool,
+      );
 }
 
 bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
@@ -63,6 +130,27 @@ class FarmStore extends ChangeNotifier {
   final List<Txn> txns = [];
   final List<FarmTask> tasks = [];
   int _nextId = 1;
+
+  Map<String, dynamic> toJson() => {
+        'bands': [for (final b in bands) b.toJson()],
+        'entries': [for (final e in entries) e.toJson()],
+        'stock': [for (final x in stock) x.toJson()],
+        'txns': [for (final x in txns) x.toJson()],
+        'tasks': [for (final x in tasks) x.toJson()],
+      };
+
+  List<T> _list<T>(Object? raw, T Function(Map<String, dynamic>) f) =>
+      [for (final x in (raw as List? ?? const [])) f(Map<String, dynamic>.from(x as Map))];
+
+  void restore(Map<String, dynamic> j) {
+    bands..clear()..addAll(_list(j['bands'], Band.fromJson));
+    entries..clear()..addAll(_list(j['entries'], DailyEntry.fromJson));
+    stock..clear()..addAll(_list(j['stock'], StockItem.fromJson));
+    txns..clear()..addAll(_list(j['txns'], Txn.fromJson));
+    tasks..clear()..addAll(_list(j['tasks'], FarmTask.fromJson));
+    _nextId = bands.fold(0, (m, b) => b.id > m ? b.id : m) + 1;
+    notifyListeners();
+  }
 
   void addBand(String name, FlockType type, int count, {DateTime? arrival}) {
     bands.add(Band(id: _nextId++, name: name, type: type, initialCount: count, arrival: arrival ?? DateTime.now()));
