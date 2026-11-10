@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../models/community.dart';
 import '../../services/community_store.dart';
 import '../../services/session.dart';
 import '../../theme/colors.dart';
