@@ -5,6 +5,7 @@ import '../../services/session.dart';
 import '../../theme/colors.dart';
 import '../../widgets/form_dialog.dart';
 import 'band_detail_screen.dart';
+import '../../l10n/l10n.dart';
 
 class BandsScreen extends StatelessWidget {
   const BandsScreen({super.key});
@@ -26,14 +27,14 @@ class BandsScreen extends StatelessWidget {
       builder: (context, _) {
         final s = FarmStore.instance;
         return Scaffold(
-          appBar: AppBar(title: const Text('Mes bandes')),
+          appBar: AppBar(title: const Tx('Mes bandes')),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _add(context),
             icon: const Icon(Icons.add),
-            label: const Text('Ajouter une bande'),
+            label: const Tx('Ajouter une bande'),
           ),
           body: s.bands.isEmpty
-              ? const Center(child: Text('Aucune bande pour le moment.'))
+              ? const Center(child: Tx('Aucune bande pour le moment.'))
               : ListView(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 96),
                   children: [
@@ -49,12 +50,12 @@ class BandsScreen extends StatelessWidget {
                             child: Padding(
                               padding: const EdgeInsets.all(16),
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text(b.name, style: t.titleMedium),
+                                Tx(b.name, style: t.titleMedium),
                                 const SizedBox(height: 2),
-                                Text('${b.type.label} · jour ${b.day} · ${s.alive(b)} oiseaux', style: t.bodyMedium),
+                                Tx(trf('{0} · jour {1} · {2} oiseaux', [tr(b.type.label), b.day, s.alive(b)]), style: t.bodyMedium),
                                 const SizedBox(height: 10),
-                                Text(
-                                  'Mortalité ${s.mortalityPct(b).toStringAsFixed(1).replaceAll('.', ',')} %',
+                                Tx(
+                                  trf('Mortalité {0} %', [s.mortalityPct(b).dec1]),
                                   style: t.bodyMedium?.copyWith(
                                     color: s.mortalityPct(b) > 2 ? SifaColors.danger : SifaColors.ok,
                                     fontWeight: FontWeight.w600,

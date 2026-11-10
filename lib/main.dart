@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'l10n/l10n.dart';
 import 'screens/onboarding_flow.dart';
 import 'screens/shell.dart';
 import 'services/persistence.dart';
@@ -17,16 +19,24 @@ class SifaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'SIFA',
-      debugShowCheckedModeBanner: false,
-      theme: sifaLightTheme(),
-      darkTheme: sifaDarkTheme(),
-      themeMode: ThemeMode.system,
-      home: ListenableBuilder(
-        listenable: Session.instance,
-        builder: (context, _) =>
-            Session.instance.onboarded ? const Shell() : const OnboardingFlow(),
+    return ListenableBuilder(
+      listenable: Listenable.merge([Session.instance, L10n.instance]),
+      builder: (context, _) => MaterialApp(
+        title: 'SIFA',
+        debugShowCheckedModeBanner: false,
+        theme: sifaLightTheme(),
+        darkTheme: sifaDarkTheme(),
+        themeMode: ThemeMode.system,
+        locale: L10n.instance.locale,
+        supportedLocales: const [Locale('fr'), Locale('en')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: Session.instance.onboarded
+            ? Shell(key: ValueKey(L10n.instance.lang))
+            : const OnboardingFlow(),
       ),
     );
   }

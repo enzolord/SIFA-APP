@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import '../../l10n/l10n.dart';
 
 /// Lecteur vidéo simple (fichier local) : toucher pour lire ou mettre en pause.
 class VideoBox extends StatefulWidget {
@@ -43,7 +44,7 @@ class _VideoBoxState extends State<VideoBox> {
         aspectRatio: 16 / 9,
         child: ColoredBox(
           color: Colors.black12,
-          child: Center(child: Text('Vidéo introuvable ou illisible')),
+          child: Center(child: Tx('Vidéo introuvable ou illisible')),
         ),
       );
     }

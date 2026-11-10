@@ -1,6 +1,7 @@
 import 'package:latlong2/latlong.dart';
 
 import '../widgets/status_chip.dart';
+import '../l10n/l10n.dart';
 
 /// Une pharmacie / un point de vente vétérinaire géolocalisé.
 class Pharmacy {
@@ -38,4 +39,4 @@ List<Pharmacy> sortedByDistance(Iterable<Pharmacy> items, LatLng from) {
 }
 
 String formatKm(double km) =>
-    km < 1 ? '${(km * 1000).round()} m' : '${km.toStringAsFixed(1).replaceAll('.', ',')} km';
+    km < 1 ? '${(km * 1000).round()} m' : '${km.dec1} km';

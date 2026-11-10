@@ -6,6 +6,7 @@ import '../../theme/colors.dart';
 import 'group_detail_screen.dart';
 import 'new_post_screen.dart';
 import 'post_card.dart';
+import '../../l10n/l10n.dart';
 
 class CommunityScreen extends StatelessWidget {
   const CommunityScreen({super.key});
@@ -19,17 +20,17 @@ class CommunityScreen extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
           child: Row(children: [
-            Expanded(child: Text('Communauté', style: t.headlineMedium)),
+            Expanded(child: Tx('Communauté', style: t.headlineMedium)),
             FilledButton.icon(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(builder: (_) => const NewPostScreen()),
               ),
               icon: const Icon(Icons.videocam_rounded),
-              label: const Text('Partager'),
+              label: const Tx('Partager'),
             ),
           ]),
         ),
-        const TabBar(tabs: [Tab(text: 'Fil'), Tab(text: 'Groupes')]),
+        TabBar(tabs: [Tab(text: tr('Fil')), Tab(text: tr('Groupes'))]),
         const Expanded(child: TabBarView(children: [_FeedTab(), _GroupsTab()])),
       ]),
     );
@@ -62,7 +63,7 @@ class _FeedTabState extends State<_FeedTab> {
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
-                    label: const Text('Tout'),
+                    label: const Tx('Tout'),
                     selected: _cat == null,
                     onSelected: (_) => setState(() => _cat = null),
                   ),
@@ -71,7 +72,7 @@ class _FeedTabState extends State<_FeedTab> {
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
-                      label: Text(c.label),
+                      label: Tx(c.label),
                       selected: _cat == c,
                       onSelected: (_) => setState(() => _cat = c),
                     ),
@@ -82,7 +83,7 @@ class _FeedTabState extends State<_FeedTab> {
             if (posts.isEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 40),
-                child: Text('Aucune publication dans ce thème.', style: t.bodyMedium, textAlign: TextAlign.center),
+                child: Tx('Aucune publication dans ce thème.', style: t.bodyMedium, textAlign: TextAlign.center),
               ),
             for (final p in posts) ...[
               PostCard(post: p),
@@ -108,7 +109,7 @@ class _GroupsTab extends StatelessWidget {
       builder: (context, _) => ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         children: [
-          Text('Rejoignez les groupes qui vous concernent pour échanger avec d’autres éleveurs.', style: t.bodyMedium),
+          Tx('Rejoignez les groupes qui vous concernent pour échanger avec d’autres éleveurs.', style: t.bodyMedium),
           const SizedBox(height: 12),
           for (final g in CommunityStore.groups) ...[
             Card(
@@ -118,8 +119,8 @@ class _GroupsTab extends StatelessWidget {
                   backgroundColor: SifaColors.brandSoft,
                   child: Icon(g.icon, color: SifaColors.brand),
                 ),
-                title: Text(g.name, style: t.titleSmall),
-                subtitle: Text(g.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+                title: Tx(g.name, style: t.titleSmall),
+                subtitle: Tx(g.description, maxLines: 2, overflow: TextOverflow.ellipsis),
                 trailing: store.isJoined(g.id)
                     ? const Icon(Icons.check_circle_rounded, color: SifaColors.ok)
                     : const Icon(Icons.chevron_right),
@@ -144,7 +145,7 @@ class _LocalNote extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 8),
-      child: Text(
+      child: Tx(
         'Version de démarrage : vos publications restent pour l’instant sur ce téléphone. '
         'Le partage entre éleveurs arrive avec la synchronisation.',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),

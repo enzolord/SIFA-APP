@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:path_provider/path_provider.dart';
 
+import '../l10n/l10n.dart';
 import 'analysis_store.dart';
 import 'community_store.dart';
 import 'farm_store.dart';
@@ -26,9 +27,12 @@ class Persistence {
     await Directory('${_dir.path}/photos').create(recursive: true);
     await Directory('${_dir.path}/videos').create(recursive: true);
 
+    L10n.instance.detectFromDevice();
     try {
       if (await _file.exists()) {
         final data = jsonDecode(await _file.readAsString()) as Map<String, dynamic>;
+        final lang = data['lang'] as String?;
+        if (lang != null) L10n.instance.set(lang);
         if (data['session'] != null) {
           Session.instance.restore(Map<String, dynamic>.from(data['session'] as Map));
         }
@@ -45,7 +49,7 @@ class Persistence {
     }
 
     AnalysisStore.instance.photoSaver = _savePhoto;
-    for (final l in [Session.instance, FarmStore.instance, AnalysisStore.instance, CommunityStore.instance]) {
+    for (final l in [Session.instance, FarmStore.instance, AnalysisStore.instance, CommunityStore.instance, L10n.instance]) {
       l.addListener(_schedule);
     }
     _ready = true;
@@ -61,6 +65,7 @@ class Persistence {
     final tmp = File('${_file.path}.tmp');
     final json = jsonEncode({
       'version': 1,
+      'lang': L10n.instance.lang,
       'session': Session.instance.toJson(),
       'farm': FarmStore.instance.toJson(),
       'analyses': AnalysisStore.instance.toJson(),

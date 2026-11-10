@@ -8,6 +8,7 @@ import '../../services/community_store.dart';
 import '../../services/persistence.dart';
 import '../../theme/colors.dart';
 import 'post_detail_screen.dart';
+import '../../l10n/l10n.dart';
 
 const _maxVideoBytes = 60 * 1024 * 1024;
 
@@ -91,7 +92,7 @@ class _NewPostScreenState extends State<NewPostScreen> {
     if (!mounted) return;
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Publié dans le groupe.')),
+      const SnackBar(content: Tx('Publié dans le groupe.')),
     );
   }
 
@@ -99,11 +100,11 @@ class _NewPostScreenState extends State<NewPostScreen> {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Partager une bonne pratique')),
+      appBar: AppBar(title: const Tx('Partager une bonne pratique')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text('Vidéo (facultative)', style: t.titleSmall),
+          Tx('Vidéo (facultative)', style: t.titleSmall),
           const SizedBox(height: 8),
           if (_videoPath == null)
             Row(children: [
@@ -112,7 +113,7 @@ class _NewPostScreenState extends State<NewPostScreen> {
                   style: OutlinedButton.styleFrom(minimumSize: const Size(0, 52)),
                   onPressed: () => _pick(ImageSource.camera),
                   icon: const Icon(Icons.videocam_rounded),
-                  label: const Text('Filmer'),
+                  label: const Tx('Filmer'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -121,7 +122,7 @@ class _NewPostScreenState extends State<NewPostScreen> {
                   style: OutlinedButton.styleFrom(minimumSize: const Size(0, 52)),
                   onPressed: () => _pick(ImageSource.gallery),
                   icon: const Icon(Icons.video_library_rounded),
-                  label: const Text('Galerie'),
+                  label: const Tx('Galerie'),
                 ),
               ),
             ])
@@ -129,23 +130,23 @@ class _NewPostScreenState extends State<NewPostScreen> {
             Card(
               child: ListTile(
                 leading: const Icon(Icons.movie_rounded, color: SifaColors.brand),
-                title: const Text('Vidéo ajoutée'),
-                subtitle: Text('${(_videoBytes / (1024 * 1024)).toStringAsFixed(1)} Mo'),
+                title: const Tx('Vidéo ajoutée'),
+                subtitle: Tx(trf('{0} Mo', [(_videoBytes / (1024 * 1024)).dec1])),
                 trailing: IconButton(
-                  tooltip: 'Retirer',
+                  tooltip: tr('Retirer'),
                   onPressed: () => setState(() => _videoPath = null),
                   icon: const Icon(Icons.close_rounded),
                 ),
               ),
             ),
           const SizedBox(height: 4),
-          Text('90 secondes maximum, 60 Mo maximum.', style: t.bodySmall),
+          Tx('90 secondes maximum, 60 Mo maximum.', style: t.bodySmall),
           const SizedBox(height: 20),
           TextField(
             controller: _title,
             textCapitalization: TextCapitalization.sentences,
             maxLength: 80,
-            decoration: const InputDecoration(labelText: 'Titre', hintText: 'Ex. : Comment je nettoie mes abreuvoirs'),
+            decoration: InputDecoration(labelText: tr('Titre'), hintText: tr('Ex. : Comment je nettoie mes abreuvoirs')),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -154,24 +155,24 @@ class _NewPostScreenState extends State<NewPostScreen> {
             minLines: 3,
             maxLines: 6,
             maxLength: 600,
-            decoration: const InputDecoration(labelText: 'Explication', alignLabelWithHint: true),
+            decoration: InputDecoration(labelText: tr('Explication'), alignLabelWithHint: true),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _group,
             isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Groupe'),
+            decoration: InputDecoration(labelText: tr('Groupe')),
             items: [
-              for (final g in CommunityStore.groups) DropdownMenuItem(value: g.id, child: Text(g.name)),
+              for (final g in CommunityStore.groups) DropdownMenuItem(value: g.id, child: Tx(g.name)),
             ],
             onChanged: (v) => setState(() => _group = v ?? _group),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<PostCategory>(
             initialValue: _category,
-            decoration: const InputDecoration(labelText: 'Thème'),
+            decoration: InputDecoration(labelText: tr('Thème')),
             items: [
-              for (final c in PostCategory.values) DropdownMenuItem(value: c, child: Text(c.label)),
+              for (final c in PostCategory.values) DropdownMenuItem(value: c, child: Tx(c.label)),
             ],
             onChanged: (v) => setState(() => _category = v ?? _category),
           ),
@@ -179,7 +180,7 @@ class _NewPostScreenState extends State<NewPostScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(color: SifaColors.yolkSoft, borderRadius: BorderRadius.circular(12)),
-            child: const Text(
+            child: const Tx(
               'Partagez ce que vous faites vraiment dans votre élevage. Pas de publicité, '
               "pas d'insultes, pas de conseils de médicaments sans avis vétérinaire.",
               style: TextStyle(color: SifaColors.ink, fontSize: 14, height: 1.4),
@@ -187,7 +188,7 @@ class _NewPostScreenState extends State<NewPostScreen> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: t.bodyMedium?.copyWith(color: SifaColors.danger)),
+            Tx(_error!, style: t.bodyMedium?.copyWith(color: SifaColors.danger)),
           ],
           const SizedBox(height: 20),
           FilledButton.icon(
@@ -196,7 +197,7 @@ class _NewPostScreenState extends State<NewPostScreen> {
             icon: _busy
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.send_rounded),
-            label: const Text('Publier'),
+            label: const Tx('Publier'),
           ),
         ],
       ),

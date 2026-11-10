@@ -9,6 +9,7 @@ import '../services/pharmacy_directory.dart';
 import '../services/routing.dart';
 import '../theme/colors.dart';
 import '../widgets/status_chip.dart';
+import '../l10n/l10n.dart';
 
 /// Carte interactive des pharmacies vétérinaires, avec itinéraire.
 class PharmacieScreen extends StatefulWidget {
@@ -127,10 +128,10 @@ class _PharmacieScreenState extends State<PharmacieScreen> {
     final sorted = sortedByDistance(_items, _origin);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pharmacies vétérinaires'),
+        title: const Tx('Pharmacies vétérinaires'),
         actions: [
           IconButton(
-            tooltip: 'Ma position',
+            tooltip: tr('Ma position'),
             onPressed: _locating ? null : _locate,
             icon: _locating
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
@@ -204,13 +205,13 @@ class _PharmacieScreenState extends State<PharmacieScreen> {
               if (_notice != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: Text(_notice!, style: t.bodyMedium?.copyWith(color: SifaColors.warn)),
+                  child: Tx(_notice!, style: t.bodyMedium?.copyWith(color: SifaColors.warn)),
                 ),
               for (final p in sorted) ...[
                 _card(context, p),
                 const SizedBox(height: 10),
               ],
-              Text(
+              Tx(
                 "Données d'exemple. L'annuaire réel arrive avec la synchronisation.",
                 style: t.bodySmall?.copyWith(fontStyle: FontStyle.italic),
               ),
@@ -236,10 +237,10 @@ class _PharmacieScreenState extends State<PharmacieScreen> {
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(p.name, style: t.titleMedium),
+            Tx(p.name, style: t.titleMedium),
             const SizedBox(height: 2),
-            Text(
-              '${p.area} · ${_me == null ? 'depuis le centre' : 'à'} ${formatKm(km)} · ${p.hours}',
+            Tx(
+              _me == null ? trf('{0} · depuis le centre · {1} · {2}', [tr(p.area), formatKm(km), tr(p.hours)]) : trf('{0} · à {1} · {2}', [tr(p.area), formatKm(km), tr(p.hours)]),
               style: t.bodyMedium,
             ),
             const SizedBox(height: 8),
@@ -249,8 +250,8 @@ class _PharmacieScreenState extends State<PharmacieScreen> {
               if (_route != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: Text(
-                    'Itinéraire : ${formatKm(_route!.km)} · environ ${_route!.duration.inMinutes} min en voiture',
+                  child: Tx(
+                    trf('Itinéraire : {0} · environ {1} min en voiture', [formatKm(_route!.km), _route!.duration.inMinutes]),
                     style: t.titleSmall,
                   ),
                 ),
@@ -260,18 +261,18 @@ class _PharmacieScreenState extends State<PharmacieScreen> {
                   icon: _routing
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.directions),
-                  label: const Text('Itinéraire'),
+                  label: const Tx('Itinéraire'),
                 ),
                 OutlinedButton.icon(
                   onPressed: () => _openMaps(p),
                   icon: const Icon(Icons.navigation_outlined),
-                  label: const Text('Ouvrir dans Maps'),
+                  label: const Tx('Ouvrir dans Maps'),
                 ),
                 if (p.phone != null)
                   OutlinedButton.icon(
                     onPressed: () => _call(p),
                     icon: const Icon(Icons.call),
-                    label: const Text('Appeler'),
+                    label: const Tx('Appeler'),
                   ),
               ]),
             ],

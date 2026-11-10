@@ -4,6 +4,7 @@ import '../../services/farm_store.dart';
 import '../../theme/colors.dart';
 import '../../widgets/form_dialog.dart';
 import '../../widgets/status_chip.dart';
+import '../../l10n/l10n.dart';
 
 class StocksScreen extends StatelessWidget {
   const StocksScreen({super.key});
@@ -49,14 +50,14 @@ class StocksScreen extends StatelessWidget {
       builder: (context, _) {
         final items = FarmStore.instance.stock;
         return Scaffold(
-          appBar: AppBar(title: const Text('Stocks')),
+          appBar: AppBar(title: const Tx('Stocks')),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _add(context),
             icon: const Icon(Icons.add),
-            label: const Text('Ajouter un article'),
+            label: const Tx('Ajouter un article'),
           ),
           body: items.isEmpty
-              ? const Center(child: Padding(padding: EdgeInsets.all(32), child: Text('Aucun article. Ajoutez votre aliment, vos vaccins et médicaments.', textAlign: TextAlign.center)))
+              ? const Center(child: Padding(padding: EdgeInsets.all(32), child: Tx('Aucun article. Ajoutez votre aliment, vos vaccins et médicaments.', textAlign: TextAlign.center)))
               : ListView(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 96),
                   children: [
@@ -71,12 +72,12 @@ class StocksScreen extends StatelessWidget {
                               padding: const EdgeInsets.all(16),
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 Row(children: [
-                                  Expanded(child: Text(s.name, style: t.titleMedium)),
+                                  Expanded(child: Tx(s.name, style: t.titleMedium)),
                                   StatusChip(_status(s).$1, _status(s).$2),
                                 ]),
                                 const SizedBox(height: 6),
-                                Text(
-                                  '${s.qty.round()} ${s.unit}${s.daysLeft != null ? ' · environ ${s.daysLeft} jours' : ''}',
+                                Tx(
+                                  '${s.qty.round()} ${tr(s.unit)}${s.daysLeft != null ? trf(' · environ {0} jours', [s.daysLeft!]) : ''}',
                                   style: t.bodyMedium?.copyWith(color: SifaColors.inkMuted),
                                 ),
                               ]),
@@ -84,7 +85,7 @@ class StocksScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                    Text('Touchez un article pour ajouter ou retirer une quantité.', style: t.bodyMedium),
+                    Tx('Touchez un article pour ajouter ou retirer une quantité.', style: t.bodyMedium),
                   ],
                 ),
         );

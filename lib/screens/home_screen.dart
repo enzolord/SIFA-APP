@@ -15,6 +15,7 @@ import 'pharmacie_screen.dart';
 import 'prophylaxie_screen.dart';
 import 'result_screen.dart';
 import 'tips_screen.dart';
+import '../l10n/l10n.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -34,8 +35,8 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(farm.isEmpty ? 'Bonjour 👋' : 'Bonjour, $farm 👋', style: t.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
-              Text(Session.instance.flockType.label, style: t.bodySmall),
+              Tx(farm.isEmpty ? 'Bonjour 👋' : trf('Bonjour, {0} 👋', [farm]), style: t.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+              Tx(Session.instance.flockType.label, style: t.bodySmall),
             ]),
           ),
         ]),
@@ -72,7 +73,7 @@ class HomeScreen extends StatelessWidget {
                   child: Row(children: [
                     const Icon(Icons.center_focus_strong_outlined, size: 32, color: SifaColors.inkMuted),
                     const SizedBox(width: 14),
-                    Expanded(child: Text('Aucune analyse pour le moment. Touchez le bouton Scanner pour commencer.', style: t.bodyMedium)),
+                    Expanded(child: Tx('Aucune analyse pour le moment. Touchez le bouton Scanner pour commencer.', style: t.bodyMedium)),
                   ]),
                 ),
               );
@@ -90,9 +91,9 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(d.info.name, style: t.titleSmall),
+                        Tx(d.info.name, style: t.titleSmall),
                         const SizedBox(height: 6),
-                        StatusChip(d.info.status, 'Confiance ${(d.confidence * 100).round()} %'),
+                        StatusChip(d.info.status, trf('Confiance {0} %', [(d.confidence * 100).round()])),
                       ]),
                     ),
                     const Icon(Icons.chevron_right),
@@ -116,8 +117,8 @@ class HomeScreen extends StatelessWidget {
                       backgroundColor: SifaColors.brandSoft,
                       child: Icon(p.hasVideo ? Icons.play_arrow_rounded : Icons.lightbulb_outline, color: SifaColors.brand),
                     ),
-                    title: Text(p.title, maxLines: 2, overflow: TextOverflow.ellipsis),
-                    subtitle: Text(p.authorName),
+                    title: Tx(p.title, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    subtitle: Tx(p.authorName),
                     onTap: () => _push(context, PostDetailScreen(postId: p.id)),
                   ),
                 ),
@@ -154,10 +155,10 @@ class _ScanHero extends StatelessWidget {
       child: Row(children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Contrôlez la santé de votre bande',
+            Tx('Contrôlez la santé de votre bande',
                 style: t.headlineSmall?.copyWith(color: Colors.white)),
             const SizedBox(height: 8),
-            Text('Photographiez une fiente : SIFA vous donne un avis en quelques secondes.',
+            Tx('Photographiez une fiente : SIFA vous donne un avis en quelques secondes.',
                 style: t.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.88))),
             const SizedBox(height: 16),
             FilledButton.icon(
@@ -168,7 +169,7 @@ class _ScanHero extends StatelessWidget {
               ),
               onPressed: onScan,
               icon: const Icon(Icons.center_focus_strong_rounded),
-              label: const Text('Scanner une fiente'),
+              label: const Tx('Scanner une fiente'),
             ),
           ]),
         ),
@@ -202,8 +203,8 @@ class _ServiceTile extends StatelessWidget {
               child: Icon(icon, color: color),
             ),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: t.titleSmall),
-              Text(subtitle, style: t.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+              Tx(title, style: t.titleSmall),
+              Tx(subtitle, style: t.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
             ]),
           ]),
         ),

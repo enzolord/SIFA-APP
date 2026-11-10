@@ -5,6 +5,7 @@ import '../../services/session.dart';
 import '../../theme/colors.dart';
 import '../../widgets/kpi_card.dart';
 import 'entry_screen.dart';
+import '../../l10n/l10n.dart';
 
 class BandDetailScreen extends StatelessWidget {
   const BandDetailScreen({super.key, required this.band});
@@ -22,7 +23,7 @@ class BandDetailScreen extends StatelessWidget {
         final shown = weights.length > 8 ? weights.sublist(weights.length - 8) : weights;
         final maxW = shown.fold<double>(1, (m, e) => e.avgWeightG! > m ? e.avgWeightG! : m);
         return Scaffold(
-          appBar: AppBar(title: Text(band.name)),
+          appBar: AppBar(title: Tx(band.name)),
           body: ListView(
             padding: const EdgeInsets.all(20),
             children: [
@@ -35,11 +36,11 @@ class BandDetailScreen extends StatelessWidget {
                 childAspectRatio: 1.5,
                 children: [
                   KpiCard(label: 'Jour', value: '${band.day}', sub: band.type.label),
-                  KpiCard(label: 'Oiseaux vivants', value: '${s.alive(band)}', sub: 'sur ${band.initialCount}'),
+                  KpiCard(label: 'Oiseaux vivants', value: '${s.alive(band)}', sub: trf('sur {0}', [band.initialCount])),
                   KpiCard(
                     label: 'Mortalité cumulée',
-                    value: '${s.mortalityPct(band).toStringAsFixed(1).replaceAll('.', ',')} %',
-                    sub: '${s.deadTotal(band)} oiseaux',
+                    value: '${s.mortalityPct(band).dec1} %',
+                    sub: trf('{0} oiseaux', [s.deadTotal(band)]),
                     subColor: s.mortalityPct(band) > 2 ? SifaColors.danger : SifaColors.ok,
                   ),
                   KpiCard(label: 'Aliment consommé', value: '${s.feedTotal(band).round()} kg'),
@@ -50,10 +51,10 @@ class BandDetailScreen extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Poids moyen (g)', style: t.titleMedium),
+                    Tx('Poids moyen (g)', style: t.titleMedium),
                     const SizedBox(height: 12),
                     if (shown.isEmpty)
-                      Text('Saisissez un poids dans la saisie du jour pour voir la courbe.', style: t.bodyMedium)
+                      Tx('Saisissez un poids dans la saisie du jour pour voir la courbe.', style: t.bodyMedium)
                     else
                       SizedBox(
                         height: 150,
@@ -63,7 +64,7 @@ class BandDetailScreen extends StatelessWidget {
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 4),
                                 child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-                                  Text('${e.avgWeightG!.round()}', style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 12)),
+                                  Tx('${e.avgWeightG!.round()}', style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 12)),
                                   const SizedBox(height: 4),
                                   Container(
                                     height: 100 * e.avgWeightG! / maxW,
@@ -86,7 +87,7 @@ class BandDetailScreen extends StatelessWidget {
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(builder: (_) => EntryScreen(initialBand: band)),
                 ),
-                child: const Text('Saisir la journée'),
+                child: const Tx('Saisir la journée'),
               ),
             ],
           ),

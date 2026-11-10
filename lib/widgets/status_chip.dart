@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/colors.dart';
+import '../l10n/l10n.dart';
 
 enum SifaStatus { ok, warn, danger, neutral }
 
@@ -24,7 +25,7 @@ class StatusChip extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 16, color: fg),
         const SizedBox(width: 6),
-        Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 13)),
+        Tx(label, style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: 13)),
       ]),
     );
   }

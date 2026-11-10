@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 
 class SectionHeader extends StatelessWidget {
   const SectionHeader(this.title, {super.key, this.action, this.onAction});
@@ -12,9 +13,9 @@ class SectionHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 10),
       child: Row(children: [
-        Expanded(child: Text(title, style: t.titleLarge)),
+        Expanded(child: Tx(title, style: t.titleLarge)),
         if (action != null)
-          TextButton(onPressed: onAction, child: Text(action!)),
+          TextButton(onPressed: onAction, child: Tx(action!)),
       ]),
     );
   }

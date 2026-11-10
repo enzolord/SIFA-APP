@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/session.dart';
 import '../widgets/disclaimer.dart';
 import '../widgets/status_chip.dart';
+import '../l10n/l10n.dart';
 
 class _Step {
   const _Step(this.day, this.title, this.status, this.label);
@@ -38,11 +39,11 @@ class ProphylaxieScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Calendrier de vaccination')),
+      appBar: AppBar(title: const Tx('Calendrier de vaccination')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text('${Session.instance.flockType.label} · jour $currentDay', style: t.titleMedium),
+          Tx(trf('{0} · jour {1}', [tr(Session.instance.flockType.label), currentDay]), style: t.titleMedium),
           const SizedBox(height: 16),
           for (final e in _plan) ...[
             Builder(builder: (context) {
@@ -52,12 +53,12 @@ class ProphylaxieScreen extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(
-                      delta > 0 ? 'Jour ${s.day} · dans $delta jour${delta > 1 ? 's' : ''}' : 'Jour ${s.day}',
+                    Tx(
+                      delta > 0 ? trf(delta > 1 ? 'Jour {0} · dans {1} jours' : 'Jour {0} · dans {1} jour', [s.day, delta]) : trf('Jour {0}', [s.day]),
                       style: t.labelLarge,
                     ),
                     const SizedBox(height: 4),
-                    Text(s.title, style: t.titleMedium),
+                    Tx(s.title, style: t.titleMedium),
                     const SizedBox(height: 10),
                     StatusChip(s.status, s.label),
                   ]),
@@ -68,7 +69,7 @@ class ProphylaxieScreen extends StatelessWidget {
           ],
           const Disclaimer(),
           const SizedBox(height: 8),
-          Text(
+          Tx(
             'Calendrier type donné à titre d\'exemple. Adaptez-le avec votre vétérinaire selon votre zone et les maladies présentes.',
             style: t.bodyMedium,
           ),

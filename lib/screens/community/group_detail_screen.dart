@@ -4,6 +4,7 @@ import '../../services/community_store.dart';
 import '../../theme/colors.dart';
 import 'new_post_screen.dart';
 import 'post_card.dart';
+import '../../l10n/l10n.dart';
 
 class GroupDetailScreen extends StatelessWidget {
   const GroupDetailScreen({super.key, required this.groupId});
@@ -15,7 +16,7 @@ class GroupDetailScreen extends StatelessWidget {
     final store = CommunityStore.instance;
     final g = store.groupById(groupId);
     return Scaffold(
-      appBar: AppBar(title: Text(g.name)),
+      appBar: AppBar(title: Tx(g.name)),
       body: ListenableBuilder(
         listenable: store,
         builder: (context, _) {
@@ -31,7 +32,7 @@ class GroupDetailScreen extends StatelessWidget {
                   child: Icon(g.icon, color: SifaColors.brand, size: 28),
                 ),
                 const SizedBox(width: 14),
-                Expanded(child: Text(g.description, style: t.bodyLarge)),
+                Expanded(child: Tx(g.description, style: t.bodyLarge)),
               ]),
               const SizedBox(height: 16),
               Row(children: [
@@ -40,12 +41,12 @@ class GroupDetailScreen extends StatelessWidget {
                       ? OutlinedButton.icon(
                           onPressed: () => store.toggleJoin(g.id),
                           icon: const Icon(Icons.check_rounded),
-                          label: const Text('Membre'),
+                          label: const Tx('Membre'),
                         )
                       : FilledButton.icon(
                           onPressed: () => store.toggleJoin(g.id),
                           icon: const Icon(Icons.add_rounded),
-                          label: const Text('Rejoindre'),
+                          label: const Tx('Rejoindre'),
                         ),
                 ),
                 const SizedBox(width: 12),
@@ -55,13 +56,13 @@ class GroupDetailScreen extends StatelessWidget {
                       MaterialPageRoute<void>(builder: (_) => NewPostScreen(groupId: g.id)),
                     ),
                     icon: const Icon(Icons.videocam_rounded),
-                    label: const Text('Publier'),
+                    label: const Tx('Publier'),
                   ),
                 ),
               ]),
               const SizedBox(height: 20),
               if (posts.isEmpty)
-                Text('Aucune publication pour le moment. Lancez la discussion !', style: t.bodyMedium),
+                Tx('Aucune publication pour le moment. Lancez la discussion !', style: t.bodyMedium),
               for (final p in posts) ...[
                 PostCard(post: p, showGroup: false),
                 const SizedBox(height: 12),

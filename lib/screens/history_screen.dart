@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/analysis_store.dart';
 import '../widgets/status_chip.dart';
 import 'result_screen.dart';
+import '../l10n/l10n.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
@@ -21,9 +22,9 @@ class HistoryScreen extends StatelessWidget {
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 const Icon(Icons.history, size: 48),
                 const SizedBox(height: 16),
-                Text('Aucune analyse pour le moment', style: t.titleMedium, textAlign: TextAlign.center),
+                Tx('Aucune analyse pour le moment', style: t.titleMedium, textAlign: TextAlign.center),
                 const SizedBox(height: 8),
-                Text('Vos analyses apparaîtront ici.', style: t.bodyMedium, textAlign: TextAlign.center),
+                Tx('Vos analyses apparaîtront ici.', style: t.bodyMedium, textAlign: TextAlign.center),
               ]),
             ),
           );
@@ -40,7 +41,7 @@ class HistoryScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                   child: Image.memory(d.photo, width: 52, height: 52, fit: BoxFit.cover),
                 ),
-                title: Text(d.info.name),
+                title: Tx(d.info.name),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: Align(

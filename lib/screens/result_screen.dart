@@ -4,6 +4,7 @@ import '../models/diagnosis.dart';
 import '../widgets/disclaimer.dart';
 import 'remedes_screen.dart';
 import '../widgets/status_chip.dart';
+import '../l10n/l10n.dart';
 
 class ResultScreen extends StatelessWidget {
   const ResultScreen({super.key, required this.diagnosis});
@@ -20,7 +21,7 @@ class ResultScreen extends StatelessWidget {
       SifaStatus.neutral => 'Information',
     };
     return Scaffold(
-      appBar: AppBar(title: const Text('Résultat')),
+      appBar: AppBar(title: const Tx('Résultat')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -35,16 +36,16 @@ class ResultScreen extends StatelessWidget {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 StatusChip(info.status, label),
                 const SizedBox(height: 12),
-                Text(info.name, style: t.headlineSmall),
+                Tx(info.name, style: t.headlineSmall),
                 const SizedBox(height: 4),
-                Text('Confiance : ${(diagnosis.confidence * 100).round()} %', style: t.bodyMedium),
+                Tx(trf('Confiance : {0} %', [(diagnosis.confidence * 100).round()]), style: t.bodyMedium),
                 const SizedBox(height: 16),
-                Text('Que faire maintenant', style: t.titleMedium),
+                Tx('Que faire maintenant', style: t.titleMedium),
                 const SizedBox(height: 8),
                 for (var i = 0; i < info.advice.length; i++)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
-                    child: Text('${i + 1}. ${info.advice[i]}', style: t.bodyLarge),
+                    child: Tx('${i + 1}. ${tr(info.advice[i])}', style: t.bodyLarge),
                   ),
               ]),
             ),
@@ -55,12 +56,12 @@ class ResultScreen extends StatelessWidget {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => RemedesScreen(disease: diagnosis.disease)),
             ),
-            child: const Text('Voir les conseils et remèdes'),
+            child: const Tx('Voir les conseils et remèdes'),
           ),
           const SizedBox(height: 16),
           const Disclaimer(),
           const SizedBox(height: 8),
-          Text('Version de démonstration : le résultat est factice tant que le modèle n\'est pas branché.',
+          Tx('Version de démonstration : le résultat est factice tant que le modèle n\'est pas branché.',
               style: t.bodyMedium?.copyWith(fontStyle: FontStyle.italic)),
         ],
       ),

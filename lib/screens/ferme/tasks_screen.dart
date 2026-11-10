@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/farm_store.dart';
 import '../../widgets/form_dialog.dart';
+import '../../l10n/l10n.dart';
 
 class TasksScreen extends StatelessWidget {
   const TasksScreen({super.key});
@@ -18,9 +19,9 @@ class TasksScreen extends StatelessWidget {
   String _when(DateTime d) {
     final n = DateTime.now();
     final days = DateTime(d.year, d.month, d.day).difference(DateTime(n.year, n.month, n.day)).inDays;
-    if (days <= 0) return "Aujourd'hui";
-    if (days == 1) return 'Demain';
-    return 'Dans $days jours';
+    if (days <= 0) return tr("Aujourd'hui");
+    if (days == 1) return tr('Demain');
+    return trf('Dans {0} jours', [days]);
   }
 
   @override
@@ -33,14 +34,14 @@ class TasksScreen extends StatelessWidget {
             return a.due.compareTo(b.due);
           });
         return Scaffold(
-          appBar: AppBar(title: const Text('Tâches')),
+          appBar: AppBar(title: const Tx('Tâches')),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _add(context),
             icon: const Icon(Icons.add),
-            label: const Text('Ajouter une tâche'),
+            label: const Tx('Ajouter une tâche'),
           ),
           body: tasks.isEmpty
-              ? const Center(child: Text('Aucune tâche.'))
+              ? const Center(child: Tx('Aucune tâche.'))
               : ListView(
                   padding: const EdgeInsets.fromLTRB(8, 8, 8, 96),
                   children: [
@@ -49,8 +50,8 @@ class TasksScreen extends StatelessWidget {
                         value: t.done,
                         onChanged: (_) => FarmStore.instance.toggleTask(t),
                         controlAffinity: ListTileControlAffinity.leading,
-                        title: Text(t.title, style: TextStyle(decoration: t.done ? TextDecoration.lineThrough : null)),
-                        subtitle: Text(_when(t.due)),
+                        title: Tx(t.title, style: TextStyle(decoration: t.done ? TextDecoration.lineThrough : null)),
+                        subtitle: Tx(_when(t.due)),
                       ),
                   ],
                 ),

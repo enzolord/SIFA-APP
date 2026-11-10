@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 
 class FieldSpec {
   const FieldSpec(this.label, {this.number = false, this.hint});
@@ -43,7 +44,7 @@ class _FormDialogState extends State<_FormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.title),
+      title: Tx(widget.title),
       content: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           for (var i = 0; i < widget.fields.length; i++)
@@ -55,8 +56,8 @@ class _FormDialogState extends State<_FormDialog> {
                     ? const TextInputType.numberWithOptions(decimal: true)
                     : TextInputType.text,
                 decoration: InputDecoration(
-                  labelText: widget.fields[i].label,
-                  hintText: widget.fields[i].hint,
+                  labelText: tr(widget.fields[i].label),
+                  hintText: widget.fields[i].hint == null ? null : tr(widget.fields[i].hint!),
                   border: const OutlineInputBorder(),
                 ),
               ),
@@ -64,10 +65,10 @@ class _FormDialogState extends State<_FormDialog> {
         ]),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Tx('Annuler')),
         FilledButton(
           onPressed: () => Navigator.pop(context, [for (final c in _ctrls) c.text.trim()]),
-          child: Text(widget.confirm),
+          child: Tx(widget.confirm),
         ),
       ],
     );

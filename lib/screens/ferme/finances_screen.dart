@@ -4,6 +4,7 @@ import '../../services/farm_store.dart';
 import '../../theme/colors.dart';
 import '../../widgets/form_dialog.dart';
 import '../../widgets/kpi_card.dart';
+import '../../l10n/l10n.dart';
 
 class FinancesScreen extends StatelessWidget {
   const FinancesScreen({super.key});
@@ -38,7 +39,7 @@ class FinancesScreen extends StatelessWidget {
         final cats = s.expensesByCategory.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
         final margin = s.monthMargin;
         return Scaffold(
-          appBar: AppBar(title: const Text('Finances')),
+          appBar: AppBar(title: const Tx('Finances')),
           body: ListView(
             padding: const EdgeInsets.all(20),
             children: [
@@ -58,13 +59,13 @@ class FinancesScreen extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text("Où va l'argent", style: t.titleMedium),
+                    Tx("Où va l'argent", style: t.titleMedium),
                     const SizedBox(height: 12),
-                    if (cats.isEmpty) Text('Aucune dépense ce mois-ci.', style: t.bodyMedium),
+                    if (cats.isEmpty) Tx('Aucune dépense ce mois-ci.', style: t.bodyMedium),
                     for (final c in cats) ...[
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text(c.key),
-                        Text(fcfa(c.value), style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Tx(c.key),
+                        Tx(fcfa(c.value), style: const TextStyle(fontWeight: FontWeight.w600)),
                       ]),
                       const SizedBox(height: 4),
                       LinearProgressIndicator(
@@ -84,7 +85,7 @@ class FinancesScreen extends StatelessWidget {
                   child: FilledButton(
                     style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
                     onPressed: () => _add(context, true),
-                    child: const Text('+ Vente'),
+                    child: const Tx('+ Vente'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -92,7 +93,7 @@ class FinancesScreen extends StatelessWidget {
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
                     onPressed: () => _add(context, false),
-                    child: const Text('+ Dépense'),
+                    child: const Tx('+ Dépense'),
                   ),
                 ),
               ]),

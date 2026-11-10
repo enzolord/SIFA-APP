@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../l10n/l10n.dart';
+
 enum FlockType { broiler, layer }
 
 extension FlockTypeLabel on FlockType {
@@ -17,7 +19,7 @@ class Session extends ChangeNotifier {
   FlockType flockType = FlockType.broiler;
   int headcount = 0;
 
-  String get farmLine => farmName.isEmpty ? flockType.label : '$farmName · ${flockType.label}';
+  String get farmLine => farmName.isEmpty ? tr(flockType.label) : '$farmName · ${tr(flockType.label)}';
 
   Map<String, dynamic> toJson() => {
         'onboarded': onboarded,

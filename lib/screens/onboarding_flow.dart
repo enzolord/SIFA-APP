@@ -5,6 +5,8 @@ import '../services/session.dart';
 import '../theme/colors.dart';
 import '../widgets/disclaimer.dart';
 import '../widgets/sifa_mark.dart';
+import '../l10n/l10n.dart';
+import '../widgets/language_switch.dart';
 
 /// Connexion -> ferme -> consentement, en une seule pile de pages.
 class OnboardingFlow extends StatefulWidget {
@@ -15,6 +17,14 @@ class OnboardingFlow extends StatefulWidget {
 }
 
 class _OnboardingFlowState extends State<OnboardingFlow> {
+  void _onLang() => setState(() {});
+
+  @override
+  void initState() {
+    super.initState();
+    L10n.instance.addListener(_onLang);
+  }
+
   int _step = 0;
   final _phone = TextEditingController();
   final _code = TextEditingController();
@@ -25,6 +35,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   @override
   void dispose() {
+    L10n.instance.removeListener(_onLang);
     _phone.dispose();
     _code.dispose();
     _farm.dispose();
@@ -63,11 +74,13 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             Row(children: [
               const SifaMark(size: 48),
               const SizedBox(width: 12),
-              Text('SIFA', style: t.displayMedium),
+              Tx('SIFA', style: t.displayMedium),
               const Spacer(),
-              Text('Étape ${_step + 1} sur 3', style: t.bodyMedium),
+              Tx(trf('Étape {0} sur 3', [_step + 1]), style: t.bodyMedium),
             ]),
-            const SizedBox(height: 28),
+            const SizedBox(height: 12),
+            const LanguageSwitch(compact: true),
+            const SizedBox(height: 16),
             Expanded(
               child: SingleChildScrollView(
                 child: switch (_step) {
@@ -80,7 +93,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             FilledButton(
               onPressed: _stepValid ? _next : null,
               style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56)),
-              child: Text(switch (_step) {
+              child: Tx(switch (_step) {
                 0 => 'Se connecter',
                 1 => 'Continuer',
                 _ => "J'accepte et je commence",
@@ -89,7 +102,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             if (_step > 0)
               TextButton(
                 onPressed: () => setState(() => _step--),
-                child: const Text('Retour'),
+                child: const Tx('Retour'),
               ),
           ]),
         ),
@@ -98,10 +111,10 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   }
 
   Widget _login(TextTheme t) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Prenez en photo la fiente de vos volailles. SIFA vous dit si elles sont saines ou malades.',
+        Tx('Prenez en photo la fiente de vos volailles. SIFA vous dit si elles sont saines ou malades.',
             style: t.bodyLarge),
         const SizedBox(height: 24),
-        Text('Numéro de téléphone', style: t.labelLarge),
+        Tx('Numéro de téléphone', style: t.labelLarge),
         const SizedBox(height: 8),
         TextField(
           controller: _phone,
@@ -110,7 +123,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           decoration: const InputDecoration(prefixText: '+237  ', hintText: '6 XX XX XX XX', border: OutlineInputBorder()),
         ),
         const SizedBox(height: 20),
-        Text('Code reçu par SMS', style: t.labelLarge),
+        Tx('Code reçu par SMS', style: t.labelLarge),
         const SizedBox(height: 8),
         TextField(
           controller: _code,
@@ -121,14 +134,14 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           decoration: const InputDecoration(hintText: '000000', counterText: '', border: OutlineInputBorder()),
         ),
         const SizedBox(height: 8),
-        Text('Version de démonstration : tout code à 6 chiffres est accepté.',
+        Tx('Version de démonstration : tout code à 6 chiffres est accepté.',
             style: t.bodyMedium?.copyWith(fontStyle: FontStyle.italic)),
       ]);
 
   Widget _farmStep(TextTheme t) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Votre élevage', style: t.headlineSmall),
+        Tx('Votre élevage', style: t.headlineSmall),
         const SizedBox(height: 20),
-        Text("Nom de la ferme", style: t.labelLarge),
+        Tx("Nom de la ferme", style: t.labelLarge),
         const SizedBox(height: 8),
         TextField(
           controller: _farm,
@@ -136,17 +149,17 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           decoration: const InputDecoration(hintText: 'Ferme Mbarga', border: OutlineInputBorder()),
         ),
         const SizedBox(height: 20),
-        Text('Type de volailles', style: t.labelLarge),
+        Tx('Type de volailles', style: t.labelLarge),
         const SizedBox(height: 8),
         SegmentedButton<FlockType>(
           segments: [
-            for (final f in FlockType.values) ButtonSegment(value: f, label: Text(f.label)),
+            for (final f in FlockType.values) ButtonSegment(value: f, label: Tx(f.label)),
           ],
           selected: {_type},
           onSelectionChanged: (s) => setState(() => _type = s.first),
         ),
         const SizedBox(height: 20),
-        Text('Nombre de volailles', style: t.labelLarge),
+        Tx('Nombre de volailles', style: t.labelLarge),
         const SizedBox(height: 8),
         TextField(
           controller: _count,
@@ -157,9 +170,9 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       ]);
 
   Widget _consentStep(TextTheme t) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Avant d\'analyser, SIFA a besoin de votre accord clair.', style: t.headlineSmall),
+        Tx('Avant d\'analyser, SIFA a besoin de votre accord clair.', style: t.headlineSmall),
         const SizedBox(height: 16),
-        const Text("• Vos photos servent à analyser la santé de vos volailles.\n"
+        const Tx("• Vos photos servent à analyser la santé de vos volailles.\n"
             "• Avec votre accord, elles peuvent aussi aider à améliorer SIFA, sans votre nom.\n"
             "• Vous pouvez retirer votre accord à tout moment dans Profil."),
         const SizedBox(height: 16),
@@ -171,7 +184,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           value: _consent,
           activeColor: SifaColors.brand,
           onChanged: (v) => setState(() => _consent = v ?? false),
-          title: const Text("J'ai compris et j'accepte que mes photos soient analysées."),
+          title: const Tx("J'ai compris et j'accepte que mes photos soient analysées."),
         ),
       ]);
 }

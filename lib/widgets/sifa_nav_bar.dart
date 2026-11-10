@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/colors.dart';
+import '../l10n/l10n.dart';
 
 /// Barre de navigation : 4 onglets + bouton Scanner surélevé au centre (action principale de l'app).
 class SifaNavBar extends StatelessWidget {
@@ -38,7 +39,7 @@ class SifaNavBar extends StatelessWidget {
                     alignment: Alignment.bottomCenter,
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
+                      child: Tx(
                         'Scanner',
                         style: TextStyle(
                           fontSize: 12,
@@ -102,7 +103,7 @@ class _Item extends StatelessWidget {
               child: Icon(on ? activeIcon : icon, size: 24, color: color),
             ),
             const SizedBox(height: 2),
-            Text(
+            Tx(
               label,
               maxLines: 1,
               style: TextStyle(fontSize: 12, fontWeight: on ? FontWeight.w700 : FontWeight.w500, color: color),

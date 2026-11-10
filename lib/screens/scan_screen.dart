@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../services/analysis_store.dart';
 import '../theme/colors.dart';
 import 'result_screen.dart';
+import '../l10n/l10n.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -54,14 +55,14 @@ class _ScanScreenState extends State<ScanScreen> {
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         const SizedBox(width: 240, height: 240, child: CustomPaint(painter: _FramePainter())),
         const SizedBox(height: 24),
-        Text('Placez la fiente dans le cadre',
+        Tx('Placez la fiente dans le cadre',
             style: t.titleMedium?.copyWith(color: Colors.white)),
         const SizedBox(height: 8),
-        Text('Lumière du jour, 20 à 30 cm, photo nette',
+        Tx('Lumière du jour, 20 à 30 cm, photo nette',
             style: t.bodyMedium?.copyWith(color: Colors.white70)),
         if (_message != null) ...[
           const SizedBox(height: 12),
-          Text(_message!, textAlign: TextAlign.center, style: t.bodyMedium?.copyWith(color: SifaColors.yolk)),
+          Tx(_message!, textAlign: TextAlign.center, style: t.bodyMedium?.copyWith(color: SifaColors.yolk)),
         ],
         const SizedBox(height: 24),
         if (_busy)
@@ -75,12 +76,12 @@ class _ScanScreenState extends State<ScanScreen> {
             ),
             onPressed: () => _go(ImageSource.camera),
             icon: const Icon(Icons.photo_camera),
-            label: const Text('Prendre la photo'),
+            label: const Tx('Prendre la photo'),
           ),
           const SizedBox(height: 12),
           TextButton(
             onPressed: () => _go(ImageSource.gallery),
-            child: const Text('Choisir dans la galerie', style: TextStyle(color: Colors.white)),
+            child: const Tx('Choisir dans la galerie', style: TextStyle(color: Colors.white)),
           ),
         ],
       ]),

@@ -6,10 +6,11 @@ import '../../services/session.dart';
 import '../../theme/colors.dart';
 import 'post_card.dart';
 import 'video_box.dart';
+import '../../l10n/l10n.dart';
 
 String myName() {
   final n = Session.instance.farmName.trim();
-  return n.isEmpty ? 'Éleveur' : n;
+  return n.isEmpty ? tr('Éleveur') : n;
 }
 
 class PostDetailScreen extends StatefulWidget {
@@ -48,7 +49,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         if (p == null || store.feed().every((x) => x.id != p.id)) {
           return Scaffold(
             appBar: AppBar(),
-            body: const Center(child: Text('Cette publication n’est plus disponible.')),
+            body: const Center(child: Tx('Cette publication n’est plus disponible.')),
           );
         }
         final group = store.groupById(p.groupId);
@@ -56,7 +57,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         final liked = store.isLiked(p.id);
         return Scaffold(
           appBar: AppBar(
-            title: Text(group.name, style: t.titleMedium),
+            title: Tx(group.name, style: t.titleMedium),
             actions: [PostMenu(post: p, onDeleted: () => Navigator.of(context).maybePop())],
           ),
           body: Column(children: [
@@ -69,34 +70,34 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(p.authorName, style: t.titleSmall),
-                        Text(timeAgo(p.at), style: t.bodySmall),
+                        Tx(p.authorName, style: t.titleSmall),
+                        Tx(timeAgo(p.at), style: t.bodySmall),
                       ]),
                     ),
-                    Chip(label: Text(p.category.label), visualDensity: VisualDensity.compact),
+                    Chip(label: Tx(p.category.label), visualDensity: VisualDensity.compact),
                   ]),
                   const SizedBox(height: 16),
-                  Text(p.title, style: t.headlineSmall),
+                  Tx(p.title, style: t.headlineSmall),
                   const SizedBox(height: 12),
                   if (p.videoPath != null) ...[
                     VideoBox(path: p.videoPath!),
                     const SizedBox(height: 12),
                   ],
-                  if (p.body.isNotEmpty) Text(p.body, style: t.bodyLarge),
+                  if (p.body.isNotEmpty) Tx(p.body, style: t.bodyLarge),
                   const SizedBox(height: 12),
                   Row(children: [
                     FilledButton.tonalIcon(
                       onPressed: () => store.toggleLike(p.id),
                       icon: Icon(liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                           color: liked ? SifaColors.danger : null),
-                      label: Text(liked ? 'Utile' : "J'aime"),
+                      label: Tx(liked ? 'Utile' : "J'aime"),
                     ),
                   ]),
                   const SizedBox(height: 20),
-                  Text('Commentaires (${comments.length})', style: t.titleMedium),
+                  Tx(trf('Commentaires ({0})', [comments.length]), style: t.titleMedium),
                   const SizedBox(height: 8),
                   if (comments.isEmpty)
-                    Text('Soyez le premier à répondre ou à partager votre expérience.', style: t.bodyMedium),
+                    Tx('Soyez le premier à répondre ou à partager votre expérience.', style: t.bodyMedium),
                   for (final c in comments)
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
@@ -111,10 +112,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text('${c.authorName} · ${timeAgo(c.at)}',
+                              Tx('${c.authorName} · ${timeAgo(c.at)}',
                                   style: t.bodySmall?.copyWith(color: SifaColors.ink)),
                               const SizedBox(height: 2),
-                              Text(c.text, style: t.bodyMedium?.copyWith(color: SifaColors.ink)),
+                              Tx(c.text, style: t.bodyMedium?.copyWith(color: SifaColors.ink)),
                             ]),
                           ),
                         ),
@@ -133,13 +134,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       controller: _ctrl,
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _send(),
-                      decoration: const InputDecoration(hintText: 'Écrire un commentaire…'),
+                      decoration: InputDecoration(hintText: tr('Écrire un commentaire…')),
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton.filled(
                     onPressed: _send,
-                    tooltip: 'Envoyer',
+                    tooltip: tr('Envoyer'),
                     icon: const Icon(Icons.send_rounded),
                   ),
                 ]),

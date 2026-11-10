@@ -4,13 +4,14 @@ import '../../models/community.dart';
 import '../../services/community_store.dart';
 import '../../theme/colors.dart';
 import 'post_detail_screen.dart';
+import '../../l10n/l10n.dart';
 
 String timeAgo(DateTime d) {
   final diff = DateTime.now().difference(d);
-  if (diff.inMinutes < 1) return "à l'instant";
-  if (diff.inHours < 1) return 'il y a ${diff.inMinutes} min';
-  if (diff.inDays < 1) return 'il y a ${diff.inHours} h';
-  if (diff.inDays < 30) return 'il y a ${diff.inDays} j';
+  if (diff.inMinutes < 1) return tr("à l'instant");
+  if (diff.inHours < 1) return trf('il y a {0} min', [diff.inMinutes]);
+  if (diff.inDays < 1) return trf('il y a {0} h', [diff.inHours]);
+  if (diff.inDays < 30) return trf('il y a {0} j', [diff.inDays]);
   return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 }
 
@@ -28,7 +29,7 @@ class AuthorAvatar extends StatelessWidget {
       backgroundColor: official ? SifaColors.brand : SifaColors.brandSoft,
       child: official
           ? Icon(Icons.verified_rounded, color: Colors.white, size: size * 0.55)
-          : Text(initial, style: const TextStyle(color: SifaColors.brand, fontWeight: FontWeight.w700)),
+          : Tx(initial, style: const TextStyle(color: SifaColors.brand, fontWeight: FontWeight.w700)),
     );
   }
 }
@@ -58,9 +59,9 @@ class PostCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(post.authorName, style: t.titleSmall),
-                  Text(
-                    showGroup ? '${group.name} · ${timeAgo(post.at)}' : timeAgo(post.at),
+                  Tx(post.authorName, style: t.titleSmall),
+                  Tx(
+                    showGroup ? '${tr(group.name)} · ${timeAgo(post.at)}' : timeAgo(post.at),
                     style: t.bodySmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -70,22 +71,22 @@ class PostCard extends StatelessWidget {
               PostMenu(post: post),
             ]),
             const SizedBox(height: 12),
-            Text(post.title, style: t.titleMedium),
+            Tx(post.title, style: t.titleMedium),
             const SizedBox(height: 8),
             if (post.hasVideo)
               const VideoPlaceholder()
             else
-              Text(post.body, style: t.bodyMedium, maxLines: 4, overflow: TextOverflow.ellipsis),
+              Tx(post.body, style: t.bodyMedium, maxLines: 4, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 10),
             Row(children: [
               Chip(
-                label: Text(post.category.label),
+                label: Tx(post.category.label),
                 visualDensity: VisualDensity.compact,
                 padding: EdgeInsets.zero,
               ),
               const Spacer(),
               IconButton(
-                tooltip: "J'aime",
+                tooltip: tr("J'aime"),
                 onPressed: () => store.toggleLike(post.id),
                 icon: Icon(liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                     color: liked ? SifaColors.danger : null),
@@ -93,7 +94,7 @@ class PostCard extends StatelessWidget {
               Row(children: [
                 const Icon(Icons.chat_bubble_outline_rounded, size: 20),
                 const SizedBox(width: 4),
-                Text('$comments'),
+                Tx('$comments'),
                 const SizedBox(width: 6),
               ]),
             ]),
@@ -143,12 +144,12 @@ class PostMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = CommunityStore.instance;
     return PopupMenuButton<String>(
-      tooltip: 'Plus',
+      tooltip: tr('Plus'),
       onSelected: (v) {
         if (v == 'report') {
           store.report(post.id);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Publication masquée sur cet appareil. Merci du signalement.')),
+            const SnackBar(content: Tx('Publication masquée sur cet appareil. Merci du signalement.')),
           );
           onDeleted?.call();
         } else if (v == 'delete') {
@@ -158,9 +159,9 @@ class PostMenu extends StatelessWidget {
       },
       itemBuilder: (_) => [
         if (post.mine)
-          const PopupMenuItem(value: 'delete', child: Text('Supprimer'))
+          const PopupMenuItem(value: 'delete', child: Tx('Supprimer'))
         else
-          const PopupMenuItem(value: 'report', child: Text('Signaler')),
+          const PopupMenuItem(value: 'report', child: Tx('Signaler')),
       ],
     );
   }
