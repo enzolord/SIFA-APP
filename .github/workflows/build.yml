@@ -19,6 +19,8 @@ jobs:
       - name: Générer le dossier android s'il manque
         run: |
           if [ ! -d android ]; then flutter create --platforms android --org com.invlab --project-name sifa .; fi
+      - name: Permissions Android (Internet, localisation)
+        run: python3 tools/patch_manifest.py
       - run: flutter pub get
       - name: Icône SIFA (remplace l'icône Flutter)
         run: dart run flutter_launcher_icons
