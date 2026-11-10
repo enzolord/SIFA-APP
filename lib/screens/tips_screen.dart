@@ -9,11 +9,11 @@ class TipsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    return Scaffold(
+      appBar: AppBar(title: const Text('Conseils')),
+      body: ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        Text('Conseils', style: Theme.of(context).textTheme.displayMedium),
-        const SizedBox(height: 16),
         _tile(context, 'Calendrier de vaccination', Icons.vaccines, const ProphylaxieScreen()),
         _tile(context, 'Pharmacies vétérinaires', Icons.local_pharmacy, const PharmacieScreen()),
         const Padding(
@@ -23,7 +23,7 @@ class TipsScreen extends StatelessWidget {
         const SizedBox(height: 8),
         const Disclaimer(),
       ],
-    );
+    ));
   }
 
   Widget _tile(BuildContext context, String title, IconData icon, Widget page) => Padding(

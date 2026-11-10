@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';
 
 import 'analysis_store.dart';
+import 'community_store.dart';
 import 'farm_store.dart';
 import 'session.dart';
 
@@ -23,6 +24,7 @@ class Persistence {
   static Future<void> init() async {
     _dir = await getApplicationDocumentsDirectory();
     await Directory('${_dir.path}/photos').create(recursive: true);
+    await Directory('${_dir.path}/videos').create(recursive: true);
 
     try {
       if (await _file.exists()) {
@@ -33,6 +35,9 @@ class Persistence {
         if (data['farm'] != null) {
           FarmStore.instance.restore(Map<String, dynamic>.from(data['farm'] as Map));
         }
+        if (data['community'] != null) {
+          CommunityStore.instance.restore(Map<String, dynamic>.from(data['community'] as Map));
+        }
         await AnalysisStore.instance.restore(data['analyses'], _readPhoto);
       }
     } catch (_) {
@@ -40,7 +45,7 @@ class Persistence {
     }
 
     AnalysisStore.instance.photoSaver = _savePhoto;
-    for (final l in [Session.instance, FarmStore.instance, AnalysisStore.instance]) {
+    for (final l in [Session.instance, FarmStore.instance, AnalysisStore.instance, CommunityStore.instance]) {
       l.addListener(_schedule);
     }
     _ready = true;
@@ -59,6 +64,7 @@ class Persistence {
       'session': Session.instance.toJson(),
       'farm': FarmStore.instance.toJson(),
       'analyses': AnalysisStore.instance.toJson(),
+      'community': CommunityStore.instance.toJson(),
     });
     await tmp.writeAsString(json, flush: true);
     await tmp.rename(_file.path);
@@ -68,6 +74,18 @@ class Persistence {
     try {
       final path = '${_dir.path}/photos/${DateTime.now().microsecondsSinceEpoch}.jpg';
       await File(path).writeAsBytes(bytes, flush: true);
+      return path;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Copie une vidéo choisie dans le dossier de l'app (le cache du sélecteur peut être vidé).
+  static Future<String?> saveVideo(String srcPath) async {
+    try {
+      final ext = srcPath.contains('.') ? srcPath.substring(srcPath.lastIndexOf('.')) : '.mp4';
+      final path = '${_dir.path}/videos/${DateTime.now().microsecondsSinceEpoch}$ext';
+      await File(srcPath).copy(path);
       return path;
     } catch (_) {
       return null;

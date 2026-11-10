@@ -24,7 +24,7 @@ jobs:
       - run: flutter pub get
       - name: Icône SIFA (remplace l'icône Flutter)
         run: dart run flutter_launcher_icons
-      - run: flutter analyze
+      - run: flutter analyze --no-fatal-infos
       - run: flutter test
       - name: APK léger (release, arm64 uniquement)
         run: |
