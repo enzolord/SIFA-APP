@@ -21,17 +21,24 @@ jobs:
           if [ ! -d android ]; then flutter create --platforms android --org com.invlab --project-name sifa .; fi
       - name: Permissions Android (Internet, localisation)
         run: python3 tools/patch_manifest.py
+      - name: Signature fixe (même empreinte SHA-1 à chaque build)
+        run: python3 tools/patch_signing.py
+        env:
+          SIFA_KS: ${{ github.workspace }}/tools/sifa-test.jks
       - run: flutter pub get
       - name: Icône SIFA (remplace l'icône Flutter)
         run: dart run flutter_launcher_icons
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
       - name: APK léger (release, arm64 uniquement)
+        env:
+          SIFA_KS: ${{ github.workspace }}/tools/sifa-test.jks
         run: |
           flutter build apk --release --split-per-abi --target-platform android-arm64 \
             --obfuscate --split-debug-info=build/symbols
           ls -l build/app/outputs/flutter-apk/
           echo "Taille APK :" && du -h build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          keytool -printcert -jarfile build/app/outputs/flutter-apk/app-arm64-v8a-release.apk | grep -E "SHA1"
       - uses: actions/upload-artifact@v4
         with:
           name: sifa-release-apk
