@@ -4,12 +4,15 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/l10n.dart';
 import 'screens/onboarding_flow.dart';
 import 'screens/shell.dart';
+import 'services/analysis_store.dart';
+import 'services/classifier.dart';
 import 'services/persistence.dart';
 import 'services/session.dart';
 import 'theme/theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  AnalysisStore.instance.classifier = TfliteClassifier();
   await Persistence.init();
   runApp(const SifaApp());
 }
