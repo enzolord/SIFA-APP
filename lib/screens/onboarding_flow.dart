@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../services/auth_service.dart';
+
 import '../services/farm_store.dart';
 import '../services/session.dart';
 import '../theme/colors.dart';
@@ -44,7 +46,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   }
 
   bool get _stepValid => switch (_step) {
-        0 => _phone.text.replaceAll(' ', '').length >= 9 && _code.text.length == 6,
+        0 => AuthService.instance.signedIn || (_phone.text.replaceAll(' ', '').length >= 9 && _code.text.length == 6),
         1 => _farm.text.trim().isNotEmpty && (int.tryParse(_count.text) ?? 0) > 0,
         _ => _consent,
       };
@@ -55,7 +57,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     } else {
       FarmStore.instance.addBand('Bande 1', _type, int.parse(_count.text));
       Session.instance.completeOnboarding(
-        phone: '+237 ${_phone.text.trim()}',
+        phone: _phone.text.trim().isEmpty ? AuthService.instance.email : '+237 ${_phone.text.trim()}',
         farmName: _farm.text.trim(),
         type: _type,
         headcount: int.parse(_count.text),
@@ -110,10 +112,68 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     );
   }
 
+  String? _authError;
+  bool _authBusy = false;
+
+  Future<void> _google() async {
+    setState(() {
+      _authBusy = true;
+      _authError = null;
+    });
+    final err = await AuthService.instance.signInWithGoogle();
+    if (!mounted) return;
+    setState(() {
+      _authBusy = false;
+      _authError = (err == null || err.isEmpty) ? null : err;
+    });
+  }
+
   Widget _login(TextTheme t) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Tx('Prenez en photo la fiente de vos volailles. SIFA vous dit si elles sont saines ou malades.',
             style: t.bodyLarge),
         const SizedBox(height: 24),
+        if (AuthService.instance.signedIn)
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(children: [
+              const Icon(Icons.check_circle_outline),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '${tr('Connecté avec Google')} : ${AuthService.instance.email}',
+                  style: t.bodyLarge,
+                ),
+              ),
+            ]),
+          )
+        else ...[
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: OutlinedButton.icon(
+              onPressed: _authBusy ? null : _google,
+              icon: _authBusy
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.account_circle_outlined),
+              label: const Tx('Continuer avec Google'),
+            ),
+          ),
+          if (_authError != null) ...[
+            const SizedBox(height: 8),
+            Tx(_authError!, style: t.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error)),
+          ],
+          const SizedBox(height: 20),
+          Center(child: Tx('ou avec votre numéro', style: t.bodyMedium)),
+          const SizedBox(height: 20),
+        ],
+        if (!AuthService.instance.signedIn) ..._phoneFields(t),
+      ]);
+
+  List<Widget> _phoneFields(TextTheme t) => [
         Tx('Numéro de téléphone', style: t.labelLarge),
         const SizedBox(height: 8),
         TextField(
@@ -136,7 +196,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         const SizedBox(height: 8),
         Tx('Version de démonstration : tout code à 6 chiffres est accepté.',
             style: t.bodyMedium?.copyWith(fontStyle: FontStyle.italic)),
-      ]);
+      ];
 
   Widget _farmStep(TextTheme t) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Tx('Votre élevage', style: t.headlineSmall),

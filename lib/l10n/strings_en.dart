@@ -280,6 +280,13 @@ const Map<String, String> enStrings = {
   "À préparer": "To prepare",
   "À venir": "Upcoming",
   "Calendrier type donné à titre d'exemple. Adaptez-le avec votre vétérinaire selon votre zone et les maladies présentes.": "Sample calendar for illustration. Adapt it with your vet to your area and the diseases present.",
+  "Continuer avec Google": "Continue with Google",
+  "ou avec votre numéro": "or use your phone number",
+  "Connecté avec Google": "Signed in with Google",
+  "Connexion impossible pour le moment. Vérifiez votre réseau.": "Can't sign in right now. Check your network.",
+  "La connexion Google n'est pas encore configurée.": "Google sign-in isn't set up yet.",
+  "Google n'a pas renvoyé de jeton de connexion.": "Google didn't return a sign-in token.",
+  "La connexion Google a échoué. Réessayez.": "Google sign-in failed. Please try again.",
 };
 
 const Map<String, String> enTemplates = {
