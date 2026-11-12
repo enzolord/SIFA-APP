@@ -83,6 +83,11 @@ if 'compileSdkVersion' not in rsrc:
             ext.javaClass.methods
                 .firstOrNull { it.name == "compileSdkVersion" && it.parameterTypes.size == 1 && it.parameterTypes[0] == Int::class.javaPrimitiveType }
                 ?.invoke(ext, 36)
+            // lintVital plante dans certains plugins (google_sign_in_android) : on le coupe en release
+            val lintOpts = ext.javaClass.methods.firstOrNull { it.name == "getLint" && it.parameterTypes.isEmpty() }?.invoke(ext)
+            lintOpts?.javaClass?.methods
+                ?.firstOrNull { it.name == "setCheckReleaseBuilds" && it.parameterTypes.size == 1 }
+                ?.invoke(lintOpts, false)
         }
     }
 }
@@ -91,7 +96,7 @@ if 'compileSdkVersion' not in rsrc:
     else:
         block = '''subprojects {
     afterEvaluate { p ->
-        if (p.hasProperty("android")) { p.android.compileSdkVersion 36 }
+        if (p.hasProperty("android")) { p.android.compileSdkVersion 36; p.android.lint.checkReleaseBuilds = false }
     }
 }
 
