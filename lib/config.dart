@@ -7,5 +7,8 @@ class AppConfig {
 
   /// ID client OAuth « Application Web » créé dans Google Cloud (n'est pas secret).
   /// À renseigner ici ou à la compilation : --dart-define=GOOGLE_WEB_CLIENT_ID=xxx.apps.googleusercontent.com
-  static const googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID', defaultValue: '');
+  static const googleWebClientId = String.fromEnvironment(
+    'GOOGLE_WEB_CLIENT_ID',
+    defaultValue: '239039656040-onr85234fqh1a1v7qc69llfugemqdk3t.apps.googleusercontent.com',
+  );
 }
