@@ -43,3 +43,27 @@ if not m or 'sifaTest' not in src:
 src = src[:m.start()] + block + src[m.start():]
 open(path, 'w', encoding='utf-8').write(src)
 print('signature fixe appliquée à', path)
+
+# --- tflite_flutter 0.11 : tensorflow-lite / -api / -gpu partagent le même namespace Android,
+# ce qui fait échouer la fusion des manifestes. L'appli n'utilise que l'API native (FFI) :
+# on n'a besoin ni de l'API Java ni du delegate GPU.
+src = open(path, encoding='utf-8').read()
+if 'tensorflow-lite-gpu' not in src:
+    if path.endswith('.kts'):
+        src += '''
+
+configurations.all {
+    exclude(group = "org.tensorflow", module = "tensorflow-lite-gpu")
+    exclude(group = "org.tensorflow", module = "tensorflow-lite-api")
+}
+'''
+    else:
+        src += '''
+
+configurations.all {
+    exclude group: "org.tensorflow", module: "tensorflow-lite-gpu"
+    exclude group: "org.tensorflow", module: "tensorflow-lite-api"
+}
+'''
+    open(path, 'w', encoding='utf-8').write(src)
+    print('exclusions tensorflow ajoutées')
