@@ -21,6 +21,8 @@ jobs:
           if [ ! -d android ]; then flutter create --platforms android --org com.invlab --project-name sifa .; fi
       - name: Permissions Android (Internet, localisation)
         run: python3 tools/patch_manifest.py
+      - name: Compatibilité JVM des plugins (tflite_flutter : Java 1.8 / Kotlin 17)
+        run: echo "kotlin.jvm.target.validation.mode=IGNORE" >> android/gradle.properties
       - name: Signature fixe (même empreinte SHA-1 à chaque build)
         run: python3 tools/patch_signing.py
         env:
