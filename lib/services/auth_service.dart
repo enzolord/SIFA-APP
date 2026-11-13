@@ -3,6 +3,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config.dart';
+import 'analytics.dart';
 
 /// Connexion Supabase (Google). L'application reste utilisable hors connexion :
 /// si Supabase n'est pas joignable ou pas initialisé, tout fonctionne en local.
@@ -60,6 +61,7 @@ class AuthService extends ChangeNotifier {
         idToken: idToken,
         accessToken: auth.accessToken,
       );
+      Analytics.instance.action('connexion_google');
       notifyListeners();
       return null;
     } catch (e) {

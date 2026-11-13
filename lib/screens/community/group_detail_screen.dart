@@ -53,7 +53,7 @@ class GroupDetailScreen extends StatelessWidget {
                 Expanded(
                   child: FilledButton.tonalIcon(
                     onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(builder: (_) => NewPostScreen(groupId: g.id)),
+                      MaterialPageRoute<void>(settings: const RouteSettings(name: 'NewPostScreen'), builder: (_) => NewPostScreen(groupId: g.id)),
                     ),
                     icon: const Icon(Icons.videocam_rounded),
                     label: const Tx('Publier'),

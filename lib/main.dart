@@ -5,6 +5,7 @@ import 'l10n/l10n.dart';
 import 'screens/onboarding_flow.dart';
 import 'screens/shell.dart';
 import 'services/analysis_store.dart';
+import 'services/analytics.dart';
 import 'services/auth_service.dart';
 import 'services/classifier.dart';
 import 'services/model_store.dart';
@@ -23,6 +24,8 @@ Future<void> main() async {
   ModelStore.instance.checkForUpdate();
   // Contenu modifiable à distance (annonces, pharmacies, formules, fiches) : cache puis mise à jour en direct.
   RemoteContent.instance.start();
+  // Mesure d'usage anonyme (désactivable dans Profil).
+  Analytics.instance.start();
   runApp(const SifaApp());
 }
 
@@ -46,6 +49,7 @@ class SifaApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
+        navigatorObservers: [Analytics.instance.observer],
         builder: (context, child) {
           final maintenance = RemoteContent.instance.maintenanceMessage;
           if (maintenance == null) return child!;

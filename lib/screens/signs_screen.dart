@@ -49,7 +49,7 @@ class _SignsScreenState extends State<SignsScreen> {
     );
     AnalysisStore.instance.add(d);
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => ResultScreen(diagnosis: d)),
+      MaterialPageRoute<void>(settings: const RouteSettings(name: 'ResultScreen'), builder: (_) => ResultScreen(diagnosis: d)),
     );
   }
 

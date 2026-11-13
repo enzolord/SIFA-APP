@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../data/knowledge.dart';
 import '../l10n/l10n.dart';
 import '../models/diagnosis.dart';
+import '../services/analysis_store.dart';
+import '../services/analytics.dart';
 import '../services/triage.dart';
 import '../theme/colors.dart';
 import '../widgets/disclaimer.dart';
@@ -120,11 +122,16 @@ class ResultScreen extends StatelessWidget {
           FilledButton(
             style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(54)),
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => RemedesScreen(disease: d.disease)),
+              MaterialPageRoute<void>(settings: const RouteSettings(name: 'RemedesScreen'), builder: (_) => RemedesScreen(disease: d.disease)),
             ),
             child: const Tx('Voir les conseils et traitements'),
           ),
           const SizedBox(height: 16),
+          if (Analytics.instance.enabled) ...[
+            const SizedBox(height: 16),
+            _FeedbackCard(diagnosis: d),
+          ],
+          const SizedBox(height: 8),
           const Disclaimer(),
           const SizedBox(height: 8),
           Tx(
@@ -182,4 +189,78 @@ class ResultScreen extends StatelessWidget {
           ),
         ]),
       );
+}
+
+/// « Ce résultat était-il juste ? » : l'avis de l'éleveur alimente le taux de bonnes réponses
+/// du tableau de bord. Une seule réponse par analyse tant que l'application reste ouverte.
+class _FeedbackCard extends StatefulWidget {
+  const _FeedbackCard({required this.diagnosis});
+  final Diagnosis diagnosis;
+
+  static final _given = <String>{};
+
+  @override
+  State<_FeedbackCard> createState() => _FeedbackCardState();
+}
+
+class _FeedbackCardState extends State<_FeedbackCard> {
+  bool _asking = false;
+
+  String get _ref => AnalysisStore.refOf(widget.diagnosis);
+  bool get _done => _FeedbackCard._given.contains(_ref);
+
+  void _send(bool right, [String? real]) {
+    Analytics.instance.track('retour', {'ref': _ref, 'juste': right, if (real != null) 'reelle': real});
+    _FeedbackCard._given.add(_ref);
+    setState(() => _asking = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    if (_done) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(children: [
+            const Icon(Icons.favorite_rounded, color: SifaColors.brand),
+            const SizedBox(width: 12),
+            Expanded(child: Tx('Merci ! Votre avis aide à améliorer SIFA.', style: t.bodyMedium)),
+          ]),
+        ),
+      );
+    }
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Tx('Ce résultat vous semble-t-il juste ?', style: t.titleSmall),
+          const SizedBox(height: 4),
+          Tx('Répondez quand vous savez, par exemple après l\'avis du vétérinaire.', style: t.bodySmall),
+          const SizedBox(height: 12),
+          if (!_asking)
+            Row(children: [
+              Expanded(child: FilledButton.tonal(onPressed: () => _send(true), child: const Tx('Oui, juste'))),
+              const SizedBox(width: 10),
+              Expanded(child: OutlinedButton(onPressed: () => setState(() => _asking = true), child: const Tx('Non, faux'))),
+            ])
+          else ...[
+            Tx('Qu\'était-ce en réalité ?', style: t.bodyMedium),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final e in const {
+                'healthy': 'Fiente saine',
+                'coccidiosis': 'Coccidiose',
+                'salmonella': 'Salmonellose',
+                'newcastle': 'Maladie de Newcastle',
+                'autre': 'Autre maladie',
+                'inconnue': 'Je ne sais pas',
+              }.entries)
+                ActionChip(label: Tx(e.value), onPressed: () => _send(false, e.key)),
+            ]),
+          ],
+        ]),
+      ),
+    );
+  }
 }

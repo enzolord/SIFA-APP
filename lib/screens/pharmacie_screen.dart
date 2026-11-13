@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/pharmacy.dart';
+import '../services/analytics.dart';
 import '../services/locator.dart';
 import '../services/pharmacy_directory.dart';
 import '../services/remote_content.dart';
@@ -102,6 +103,7 @@ class _PharmacieScreenState extends State<PharmacieScreen> {
       _routing = true;
       _notice = null;
     });
+    Analytics.instance.action('itineraire_carte');
     final r = await fetchRoute(_me!, p.position);
     if (!mounted) return;
     setState(() {
@@ -126,12 +128,14 @@ class _PharmacieScreenState extends State<PharmacieScreen> {
     final origin = _me == null ? '' : '&origin=${_me!.latitude},${_me!.longitude}';
     final uri = Uri.parse(
         'https://www.google.com/maps/dir/?api=1&destination=$dest$origin&travelmode=driving');
+    Analytics.instance.action('itineraire_maps');
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) setState(() => _notice = "Impossible d'ouvrir l'application de cartes.");
   }
 
   Future<void> _call(Pharmacy p) async {
     if (p.phone == null) return;
+    Analytics.instance.action('appel_pharmacie');
     await launchUrl(Uri(scheme: 'tel', path: p.phone));
   }
 

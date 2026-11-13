@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/analytics.dart';
 import '../services/auth_service.dart';
 import '../services/remote_content.dart';
 import '../theme/colors.dart';
@@ -43,6 +44,7 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
     });
     try {
       await client.rpc('activer_code', params: {'p_code': code});
+      Analytics.instance.action('code_active');
       if (!mounted) return;
       setState(() => _msg = 'Formule activée. Merci !');
     } catch (e) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/analytics.dart';
 import '../services/remote_content.dart';
 
 import '../services/analysis_store.dart';
@@ -200,7 +201,10 @@ class _ServiceTile extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     return Card(
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          Analytics.instance.action('tuile:$title');
+          onTap();
+        },
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [

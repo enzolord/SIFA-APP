@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/diagnosis.dart';
-import 'auth_service.dart';
+import 'analytics.dart';
 import 'classifier.dart';
+import 'triage.dart';
 
 /// Historique des analyses. Les photos sont enregistrées sur le téléphone
 /// par [photoSaver] (branché par Persistence) ; la liste est rechargée au démarrage.
@@ -18,35 +19,27 @@ class AnalysisStore extends ChangeNotifier {
   List<Diagnosis> get items => List.unmodifiable(_items.reversed);
   Diagnosis? get last => _items.isEmpty ? null : _items.last;
 
-  static const _dbName = {
-    Disease.healthy: 'sain',
-    Disease.coccidiosis: 'coccidiose',
-    Disease.salmonella: 'salmonellose',
-    Disease.newcastle: 'newcastle',
-  };
+  /// Référence anonyme d'une analyse : relie l'avis de l'éleveur à son résultat.
+  static String refOf(Diagnosis d) => d.at.millisecondsSinceEpoch.toString();
 
-  /// Statistiques d'usage pour le tableau de bord : résultat et confiance seulement, jamais la photo.
-  /// Sans compte connecté ou sans réseau, rien n'est envoyé (l'analyse reste locale).
-  Future<void> _report(Diagnosis d) async {
-    final auth = AuthService.instance;
-    final client = auth.client;
-    final uid = auth.user?.id;
-    if (client == null || uid == null) return;
-    try {
-      await client.from('analyses').insert({
-        'user_id': uid,
-        'maladie': _dbName[d.disease],
-        'confiance': d.confidence.clamp(0.0, 1.0),
-      });
-    } catch (e) {
-      debugPrint('Statistiques non envoyées : $e');
-    }
+  /// Statistiques d'usage : résultat et fiabilité seulement, jamais la photo.
+  void _track(Diagnosis d) {
+    final probs = d.photoProbs;
+    Analytics.instance.track('analyse', {
+      'ref': refOf(d),
+      'maladie': d.disease.name,
+      'confiance': double.parse(d.confidence.clamp(0.0, 1.0).toStringAsFixed(3)),
+      'fiabilite': d.reliability.name,
+      'questions': d.signs.length,
+      if (probs != null) 'photo': Disease.values[Triage.argmax(probs)].name,
+      if (probs != null) 'alerte': Triage.combine(probs, d.signs).redFlag,
+    });
   }
 
   void add(Diagnosis d) {
     _items.add(d);
     notifyListeners();
-    _report(d);
+    _track(d);
     final saver = photoSaver;
     if (saver != null && d.photoPath == null) {
       saver(d.photo).then((path) {

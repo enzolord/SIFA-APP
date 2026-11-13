@@ -200,6 +200,16 @@ EN_SANTE = {
 "Un poulet qui ne mange plus fait des fientes vertes, quelle que soit la maladie.":"A chicken that stops eating passes green droppings, whatever the disease.",
 "Chez l'homme, ce virus peut donner une conjonctivite passagère. Lavez-vous les mains après avoir touché les poulets.":"In people, this virus can cause a passing conjunctivitis. Wash your hands after handling the chickens.",
 # --- formulaire adaptatif
+'Merci ! Votre avis aide à améliorer SIFA.':'Thank you! Your feedback helps improve SIFA.',
+'Ce résultat vous semble-t-il juste ?':'Does this result look right to you?',
+"Répondez quand vous savez, par exemple après l'avis du vétérinaire.":"Answer when you know, for example after the vet's opinion.",
+'Oui, juste':'Yes, correct',
+'Non, faux':'No, wrong',
+"Qu'était-ce en réalité ?":'What was it in reality?',
+'Fiente saine':'Healthy dropping',
+'Autre maladie':'Another disease',
+'Statistiques anonymes':'Anonymous statistics',
+'Aide à améliorer SIFA. Jamais de photo, de nom ni de position.':'Helps improve SIFA. Never a photo, name or location.',
 'Prix bientôt communiqué':'Price coming soon',
 "Saisissez votre code d'activation.":'Enter your activation code.',
 'Connectez-vous avec Google (onglet Profil) pour activer un code.':'Sign in with Google (Profile tab) to activate a code.',
@@ -237,5 +247,6 @@ EN_SANTE = {
 }
 
 TEMPLATES_SANTE = {
+"Cette photo montre : {0}. SIFA analyse uniquement les fientes de poule.":"This photo shows: {0}. SIFA only analyses chicken droppings.",
 " · environ {0} jours": " · about {0} days",
 }

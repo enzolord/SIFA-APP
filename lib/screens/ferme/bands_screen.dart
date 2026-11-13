@@ -45,7 +45,7 @@ class BandsScreen extends StatelessWidget {
                           child: InkWell(
                             borderRadius: BorderRadius.circular(20),
                             onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute<void>(builder: (_) => BandDetailScreen(band: b)),
+                              MaterialPageRoute<void>(settings: const RouteSettings(name: 'BandDetailScreen'), builder: (_) => BandDetailScreen(band: b)),
                             ),
                             child: Padding(
                               padding: const EdgeInsets.all(16),

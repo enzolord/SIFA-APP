@@ -12,6 +12,9 @@ class AppConfig {
     defaultValue: '239039656040-onr85234fqh1a1v7qc69llfugemqdk3t.apps.googleusercontent.com',
   );
 
+  /// Version affichée dans les statistiques (à garder alignée sur pubspec.yaml).
+  static const appVersion = '0.1.0';
+
   /// Contrôle en ligne « est-ce bien une fiente ? » (Gemini via la fonction Supabase verifier-fiente).
   /// Sans réseau, l'application utilise seulement le modèle embarqué.
   static const onlineCheck = true;

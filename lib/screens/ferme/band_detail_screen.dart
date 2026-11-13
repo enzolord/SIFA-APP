@@ -85,7 +85,7 @@ class BandDetailScreen extends StatelessWidget {
               FilledButton(
                 style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(54)),
                 onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => EntryScreen(initialBand: band)),
+                  MaterialPageRoute<void>(settings: const RouteSettings(name: 'EntryScreen'), builder: (_) => EntryScreen(initialBand: band)),
                 ),
                 child: const Tx('Saisir la journée'),
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'abonnement_screen.dart';
+import '../services/analytics.dart';
 import '../services/auth_service.dart';
 import '../services/session.dart';
 import '../l10n/l10n.dart';
@@ -41,10 +42,12 @@ class ProfileScreen extends StatelessWidget {
             title: const Tx('Formules'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const AbonnementScreen()),
+              MaterialPageRoute<void>(settings: const RouteSettings(name: 'AbonnementScreen'), builder: (_) => const AbonnementScreen()),
             ),
           ),
         ),
+        const SizedBox(height: 12),
+        const _UsageSwitch(),
         const SizedBox(height: 12),
         const Card(child: ListTile(leading: Icon(Icons.sync), title: Tx('Synchronisation'), subtitle: Tx('Bientôt'))),
         const SizedBox(height: 12),
@@ -103,6 +106,32 @@ class _AccountCard extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Coupe ou rétablit la mesure d'usage anonyme.
+class _UsageSwitch extends StatefulWidget {
+  const _UsageSwitch();
+
+  @override
+  State<_UsageSwitch> createState() => _UsageSwitchState();
+}
+
+class _UsageSwitchState extends State<_UsageSwitch> {
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: SwitchListTile(
+        secondary: const Icon(Icons.insights_rounded),
+        title: const Tx('Statistiques anonymes'),
+        subtitle: const Tx("Aide à améliorer SIFA. Jamais de photo, de nom ni de position."),
+        value: Analytics.instance.enabled,
+        onChanged: (v) async {
+          await Analytics.instance.setEnabled(v);
+          if (mounted) setState(() {});
+        },
+      ),
     );
   }
 }

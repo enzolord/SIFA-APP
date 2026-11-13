@@ -49,7 +49,7 @@ class PostCard extends StatelessWidget {
     return Card(
       child: InkWell(
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => PostDetailScreen(postId: post.id)),
+          MaterialPageRoute<void>(settings: const RouteSettings(name: 'PostDetailScreen'), builder: (_) => PostDetailScreen(postId: post.id)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(14),

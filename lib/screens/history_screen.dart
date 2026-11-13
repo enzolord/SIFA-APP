@@ -50,7 +50,7 @@ class HistoryScreen extends StatelessWidget {
                   ),
                 ),
                 onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => ResultScreen(diagnosis: d)),
+                  MaterialPageRoute<void>(settings: const RouteSettings(name: 'ResultScreen'), builder: (_) => ResultScreen(diagnosis: d)),
                 ),
               ),
             );

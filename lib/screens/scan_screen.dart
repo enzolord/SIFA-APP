@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/analysis_store.dart';
+import '../services/analytics.dart';
 import '../services/classifier.dart';
+import '../services/dropping_check.dart';
 import '../theme/colors.dart';
 import 'signs_screen.dart';
 import '../l10n/l10n.dart';
@@ -28,9 +30,25 @@ class _ScanScreenState extends State<ScanScreen> {
       final f = await _picker.pickImage(source: source, maxWidth: 1280, imageQuality: 90);
       if (f == null) return;
       final bytes = await f.readAsBytes();
+      // Gemini (en ligne) et le modèle embarqué travaillent en même temps ; sans réseau ou si
+      // Gemini tarde, le modèle embarqué décide seul.
+      final online = DroppingCheck.verify(bytes);
       final outcome = await AnalysisStore.instance.classifier.analyze(bytes);
+      final gem = await online.timeout(const Duration(seconds: 4), onTimeout: () => DroppingCheckResult.unknown);
       if (!mounted) return;
       final probs = outcome.probs;
+      final rejectedByGemini = probs != null && gem.verdict == DroppingVerdict.notDropping;
+      Analytics.instance.track('scan', {
+        'issue': rejectedByGemini ? 'notDropping' : (outcome.issue?.name ?? 'ok'),
+        'gemini': gem.verdict.name,
+      });
+      if (rejectedByGemini) {
+        final seen = L10n.en ? gem.seenEn : gem.seenFr;
+        setState(() => _message = seen.isEmpty
+            ? tr('Cette photo ne montre pas une fiente, ou elle est trop floue. SIFA analyse uniquement les fientes de poule.')
+            : trf('Cette photo montre : {0}. SIFA analyse uniquement les fientes de poule.', [seen]));
+        return;
+      }
       if (probs == null) {
         setState(() => _message = switch (outcome.issue) {
               ScanIssue.tooDark => 'Photo trop sombre. Reprenez-la à la lumière du jour.',
@@ -44,7 +62,7 @@ class _ScanScreenState extends State<ScanScreen> {
         return;
       }
       await Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => SignsScreen(photo: bytes, photoProbs: probs)),
+        MaterialPageRoute<void>(settings: const RouteSettings(name: 'SignsScreen'), builder: (_) => SignsScreen(photo: bytes, photoProbs: probs)),
       );
     } catch (_) {
       if (mounted) setState(() => _message = "Impossible d'ouvrir la photo. Réessayez.");

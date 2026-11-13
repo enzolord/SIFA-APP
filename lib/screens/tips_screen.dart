@@ -33,7 +33,7 @@ class TipsScreen extends StatelessWidget {
             leading: Icon(icon),
             title: Tx(title),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page)),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(settings: RouteSettings(name: title), builder: (_) => page)),
           ),
         ),
       );
@@ -61,7 +61,7 @@ class DiseaseSheetsScreen extends StatelessWidget {
                   subtitle: const Tx('Reconnaître, traiter, prévenir'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(builder: (_) => RemedesScreen(disease: d)),
+                    MaterialPageRoute<void>(settings: const RouteSettings(name: 'RemedesScreen'), builder: (_) => RemedesScreen(disease: d)),
                   ),
                 ),
               ),

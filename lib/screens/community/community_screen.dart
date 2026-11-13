@@ -23,7 +23,7 @@ class CommunityScreen extends StatelessWidget {
             Expanded(child: Tx('Communauté', style: t.headlineMedium)),
             FilledButton.icon(
               onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const NewPostScreen()),
+                MaterialPageRoute<void>(settings: const RouteSettings(name: 'NewPostScreen'), builder: (_) => const NewPostScreen()),
               ),
               icon: const Icon(Icons.videocam_rounded),
               label: const Tx('Partager'),
@@ -125,7 +125,7 @@ class _GroupsTab extends StatelessWidget {
                     ? const Icon(Icons.check_circle_rounded, color: SifaColors.ok)
                     : const Icon(Icons.chevron_right),
                 onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => GroupDetailScreen(groupId: g.id)),
+                  MaterialPageRoute<void>(settings: const RouteSettings(name: 'GroupDetailScreen'), builder: (_) => GroupDetailScreen(groupId: g.id)),
                 ),
               ),
             ),
