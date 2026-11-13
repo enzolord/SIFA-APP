@@ -4,6 +4,8 @@ import { useStats, WithStats } from '../stats.jsx';
 import { Async, Card, ChartBox, Grid, Kpi, Kpis, Note, Pill, SimpleList, SubTabs, col, useAsync, useToast } from '../ui.jsx';
 import { fday, fdate, fetchEvents, must, nf, pct, ratio, sb } from '../lib.js';
 import { useSession } from '../session.jsx';
+import { fcfa, legacyLabel, offers } from '../pricing.js';
+import { getC } from '../lib.js';
 
 const TABS = [['/utilisateurs', 'Vue générale', true], ['/utilisateurs/fidelite', 'Fidélité'], ['/utilisateurs/profils', 'Profils d’usage'], ['/utilisateurs/abonnes', 'Abonnés'], ['/utilisateurs/liste', 'Liste et fiches']];
 const TYPE = { chair: 'Poulets de chair', pondeuse: 'Poules pondeuses', mixte: 'Mixte' };
@@ -112,13 +114,16 @@ function Profiles() {
 
 function Subscribers() {
   const st = useAsync(async () => {
-    const [subs, codes] = await Promise.all([
+    const [tarifs, subs, codes] = await Promise.all([
+      getC('tarifs').catch(() => ({})),
       must(sb.from('abonnements').select('user_id,formule,debut,fin,statut').order('fin', { ascending: true }).limit(2000)),
       must(sb.from('codes_activation').select('formule,utilise_par,cree_le,utilise_le').limit(5000)),
     ]);
-    return { subs, codes };
+    return { subs, codes, tarifs };
   }, []);
-  return <Async state={st}>{({ subs, codes }) => {
+  return <Async state={st}>{({ subs, codes, tarifs }) => {
+    const catalog = offers(tarifs), label = id => catalog.find(o => o.id === id)?.label || legacyLabel[id] || id;
+    const mrr = subs.filter(x => x.statut === 'actif').reduce((n, x) => n + (catalog.find(o => o.id === x.formule)?.price || 0), 0);
     const actifs = subs.filter(x => x.statut === 'actif');
     const by = {}; actifs.forEach(x => { by[x.formule] = (by[x.formule] || 0) + 1; });
     const soon = actifs.filter(x => x.fin && new Date(x.fin) - Date.now() < 7 * 864e5 && new Date(x.fin) > Date.now()).length;
@@ -126,13 +131,14 @@ function Subscribers() {
     return <>
       <Kpis>
         <Kpi label="Abonnés actifs" value={nf(actifs.length)} />
-        {Object.entries(by).map(([k, v]) => <Kpi key={k} label={'Formule ' + k} value={nf(v)} />)}
+        <Kpi label="Revenu mensuel estimé" value={fcfa(mrr)} detail="Somme des prix des abonnements actifs (hors anciennes formules)" />
+        {Object.entries(by).map(([k, v]) => <Kpi key={k} label={label(k)} value={nf(v)} />)}
         <Kpi label="Expirent sous 7 jours" value={nf(soon)} tone={soon ? 'bad' : ''} />
         <Kpi label="Codes créés" value={nf(codes.length)} detail={`${nf(used)} utilisés`} />
       </Kpis>
       <Card title="Abonnements actifs" sub="Classés par date de fin.">
         {actifs.length ? <div className="tablewrap"><table><thead><tr><th>Formule</th><th>Début</th><th>Fin</th></tr></thead>
-          <tbody>{actifs.slice(0, 200).map((x, i) => <tr key={i}><td>{x.formule}</td><td>{fday(x.debut)}</td><td>{fday(x.fin)}</td></tr>)}</tbody></table></div> : <p className="muted">Aucun abonnement actif.</p>}
+          <tbody>{actifs.slice(0, 200).map((x, i) => <tr key={i}><td>{label(x.formule)}</td><td>{fday(x.debut)}</td><td>{fday(x.fin)}</td></tr>)}</tbody></table></div> : <p className="muted">Aucun abonnement actif.</p>}
       </Card>
     </>;
   }}</Async>;

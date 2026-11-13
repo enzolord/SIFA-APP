@@ -278,6 +278,30 @@ drop policy if exists entr_admin on public.entrainements;
 create policy entr_admin on public.entrainements for all to authenticated
   using (public.is_admin()) with check (public.is_admin());
 
+-- 6b. Offres (analyse, gestion de ferme, pack complet) : codes et abonnements portent l'identifiant de l'offre,
+--     par exemple analyse_solo, gestion_3, pack_pro_4. « mensuelle » et « annuelle » restent valables.
+alter table public.abonnements drop constraint if exists abonnements_formule_check;
+alter table public.abonnements add constraint abonnements_formule_check check (formule ~ '^[a-z0-9_]{3,40}$');
+alter table public.codes_activation drop constraint if exists codes_activation_formule_check;
+alter table public.codes_activation add constraint codes_activation_formule_check check (formule ~ '^[a-z0-9_]{3,40}$');
+alter table public.codes_activation add column if not exists duree_mois int not null default 1 check (duree_mois between 1 and 36);
+update public.codes_activation set duree_mois = 12 where formule = 'annuelle' and duree_mois = 1 and utilise_par is null;
+
+create or replace function public.activer_code(p_code text)
+returns text language plpgsql security definer set search_path = public as $$
+declare c public.codes_activation%rowtype;
+begin
+  select * into c from public.codes_activation
+   where code = upper(trim(p_code)) and utilise_par is null for update;
+  if not found then raise exception 'Code invalide ou déjà utilisé'; end if;
+  update public.codes_activation set utilise_par = auth.uid(), utilise_le = now() where code = c.code;
+  update public.abonnements set statut = 'expire' where user_id = auth.uid() and statut = 'actif';
+  insert into public.abonnements (user_id, formule, analyses_restantes, fin)
+  values (auth.uid(), c.formule, null, now() + make_interval(months => c.duree_mois));
+  return c.formule;
+end $$;
+grant execute on function public.activer_code(text) to authenticated;
+
 -- 7. Contenu de départ (ne remplace rien d'existant)
 insert into public.contenu (cle, valeur) values
   ('annonce',     '{"actif": false, "niveau": "info", "titre": {"fr": "", "en": ""}, "texte": {"fr": "", "en": ""}}'),
@@ -285,6 +309,7 @@ insert into public.contenu (cle, valeur) values
   ('formules',    '{"mensuelle": {"prix": "", "desc": {"fr": "Analyses illimitées pour une ferme", "en": "Unlimited analyses for one farm"}},
                     "annuelle":  {"prix": "", "desc": {"fr": "Même formule, moins chère par mois", "en": "Same plan, cheaper per month"}},
                     "paiement":  {"fr": "", "en": ""}}'),
+  ('tarifs',      '{"gestion_disponible": false}'),
   ('fiches',      '{}')
 on conflict (cle) do nothing;
 

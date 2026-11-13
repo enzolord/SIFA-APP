@@ -4,8 +4,9 @@ import { Armed, Async, BiField, Card, Grid, Note, Pill, SubTabs, bi, useAsync, u
 import { MALADIES, L, fdate, genCode, getC, must, sb, setC } from '../lib.js';
 import { useSession } from '../session.jsx';
 import BASE from '../data/fichesBase.json';
+import { catalogue, packPrice, fcfa, offers, PACKS, TIERS, DEFAULT_TARIFS } from '../pricing.js';
 
-const TABS = [['/contenu', 'Annonce et maintenance', true], ['/contenu/formules', 'Formules et codes'], ['/contenu/pharmacies', 'Pharmacies'], ['/contenu/fiches', 'Fiches maladies']];
+const TABS = [['/contenu', 'Annonce et maintenance', true], ['/contenu/tarifs', 'Tarifs'], ['/contenu/formules', 'Codes et paiement'], ['/contenu/pharmacies', 'Pharmacies'], ['/contenu/fiches', 'Fiches maladies']];
 const clone = o => JSON.parse(JSON.stringify(o));
 
 function Announce() {
@@ -41,39 +42,77 @@ function Plans() {
   const { me } = useSession();
   const st = useAsync(() => getC('formules'), []);
   const codes = useAsync(() => must(sb.from('codes_activation').select('*').order('cree_le', { ascending: false }).limit(60)), []);
-  const [qty, setQty] = useState(5); const [kind, setKind] = useState('mensuelle');
+  const tar = useAsync(() => getC('tarifs'), []);
+  const [qty, setQty] = useState(5); const [kind, setKind] = useState('analyse_solo'); const [months, setMonths] = useState(1);
   return <>
     <Async state={st}>{init => <PlansForm init={init} toast={toast} />}</Async>
     <Card title="Codes d’activation" sub="Après un paiement Mobile Money confirmé, créez un code et envoyez-le à l’éleveur. Il l’entre dans l’application (connexion Google nécessaire).">
       <div className="actions" style={{ margin: '0 0 14px' }}>
-        <select value={kind} onChange={e => setKind(e.target.value)} style={{ width: 'auto' }}><option value="mensuelle">Mensuelle</option><option value="annuelle">Annuelle</option></select>
+        <select value={kind} onChange={e => setKind(e.target.value)} style={{ width: 'auto', maxWidth: '100%' }}>{offers(tar.data || {}).map(o => <option key={o.id} value={o.id}>{o.label} · {fcfa(o.price)}/mois</option>)}</select>
+        <span>Durée :</span><select value={months} onChange={e => setMonths(+e.target.value)} style={{ width: 'auto' }}>{[1, 3, 6, 12].map(m => <option key={m} value={m}>{m} mois</option>)}</select>
         <span>Nombre :</span><input type="number" min="1" max="20" value={qty} onChange={e => setQty(e.target.value)} style={{ width: 90 }} />
         <button className="btn" type="button" onClick={async () => {
-          try { const n = Math.max(1, Math.min(20, +qty || 1)); await must(sb.from('codes_activation').insert(Array.from({ length: n }, () => ({ code: genCode(), formule: kind, cree_par: me.id })))); toast(n + ' code(s) créé(s).'); codes.reload(); }
+          try { const n = Math.max(1, Math.min(20, +qty || 1)); await must(sb.from('codes_activation').insert(Array.from({ length: n }, () => ({ code: genCode(), formule: kind, duree_mois: months, cree_par: me.id })))); toast(n + ' code(s) créé(s).'); codes.reload(); }
           catch (e) { toast('Création : ' + e.message, true); }
         }}>Créer des codes</button>
       </div>
-      <Async state={codes}>{rows => rows.length ? <div className="tablewrap"><table><thead><tr>{['Code', 'Formule', 'Créé', 'État', ''].map(t => <th key={t}>{t}</th>)}</tr></thead>
-        <tbody>{rows.map(r => <tr key={r.code}><td className="mono">{r.code}</td><td>{r.formule}</td><td>{fdate(r.cree_le)}</td>
+      <Async state={codes}>{rows => rows.length ? <div className="tablewrap"><table><thead><tr>{['Code', 'Offre', 'Durée', 'Créé', 'État', ''].map(t => <th key={t}>{t}</th>)}</tr></thead>
+        <tbody>{rows.map(r => <tr key={r.code}><td className="mono">{r.code}</td><td>{offers(tar.data || {}).find(o => o.id === r.formule)?.label || r.formule}</td><td>{r.duree_mois ?? 1} mois</td><td>{fdate(r.cree_le)}</td>
           <td>{r.utilise_par ? <Pill>Utilisé {fdate(r.utilise_le)}</Pill> : <Pill tone="ok">Disponible</Pill>}</td>
           <td>{!r.utilise_par && <button className="btn small sec" type="button" onClick={async () => { try { await navigator.clipboard.writeText(r.code); toast('Code copié.'); } catch { toast('Copie impossible : sélectionnez le code.', true); } }}>Copier</button>}</td></tr>)}</tbody></table></div> : <p className="muted">Aucun code créé.</p>}</Async>
     </Card>
   </>;
 }
 function PlansForm({ init, toast }) {
-  const [F, setF] = useState(() => {
-    const f = Object.assign({ mensuelle: {}, annuelle: {}, paiement: bi() }, init);
-    for (const k of ['mensuelle', 'annuelle']) f[k] = { prix: '', ...f[k], desc: bi(f[k]?.desc?.fr, f[k]?.desc?.en) };
-    f.paiement = bi(f.paiement?.fr, f.paiement?.en); return f;
-  });
-  const plan = (k, title) => <div className="item"><h3>{title}</h3>
-    <label className="f">Prix affiché (ex. 5 000 FCFA / mois)</label><input type="text" value={F[k].prix} onChange={e => setF({ ...F, [k]: { ...F[k], prix: e.target.value } })} />
-    <BiField label="Description" value={F[k].desc} onChange={v => setF({ ...F, [k]: { ...F[k], desc: v } })} /></div>;
-  return <Card title="Formules et prix" sub="Ce que les éleveurs voient dans l’écran « Formules ». Les prix sont du texte libre.">
-    <Grid>{plan('mensuelle', 'Formule mensuelle')}{plan('annuelle', 'Formule annuelle')}</Grid>
-    <div style={{ marginTop: 8 }}><BiField label="Comment payer (Mobile Money, numéro, étapes)" value={F.paiement} area onChange={v => setF({ ...F, paiement: v })} /></div>
-    <div className="actions"><button className="btn" type="button" onClick={async () => { try { await setC('formules', F); toast('Formules enregistrées.'); } catch (e) { toast('Enregistrement : ' + e.message, true); } }}>Enregistrer</button></div>
+  const [F, setF] = useState(() => ({ ...init, paiement: bi(init.paiement?.fr, init.paiement?.en) }));
+  return <Card title="Comment payer" sub="Texte affiché dans l’écran « Formules » : numéro Mobile Money, étapes, contact.">
+    <BiField label="Instructions de paiement" value={F.paiement} area onChange={v => setF({ ...F, paiement: v })} />
+    <div className="actions"><button className="btn" type="button" onClick={async () => { try { await setC('formules', F); toast('Instructions enregistrées.'); } catch (e) { toast('Enregistrement : ' + e.message, true); } }}>Enregistrer</button></div>
   </Card>;
+}
+
+function Tarifs() {
+  const toast = useToast();
+  const st = useAsync(() => getC('tarifs'), []);
+  return <Async state={st}>{init => <TarifsForm init={init} toast={toast} />}</Async>;
+}
+function TarifsForm({ init, toast }) {
+  const [T, setT] = useState(() => ({ ...DEFAULT_TARIFS, ...init, prix: { ...(init.prix || {}) } }));
+  const cat = catalogue(T);
+  const [raw, setRaw] = useState(() => Object.fromEntries(Object.entries(init.prix || {}).map(([k, v]) => [k, v === null ? 'devis' : String(v)])));
+  const setPrice = (id, text) => {
+    setRaw(r => ({ ...r, [id]: text }));
+    setT(x => {
+      const prix = { ...x.prix }; const n = parseInt(text.replace(/\s/g, ''), 10);
+      if (text.toLowerCase() === 'devis') prix[id] = null; else if (n > 0 && /^[\d\s]+$/.test(text)) prix[id] = n; else delete prix[id];
+      return { ...x, prix };
+    });
+  };
+  const field = (id, shown) => <input type="text" inputMode="numeric" style={{ width: 120 }} value={raw[id] ?? ''} placeholder={shown == null ? 'devis' : String(shown)} onChange={e => setPrice(id, e.target.value.trim())} />;
+  const base = Object.fromEntries([...PACKS.map(p => ['analyse_' + p.key, p.price]), ...TIERS.map(t => ['gestion_' + t.n, t.price])]);
+  return <>
+    <Note style={{ marginBottom: 14 }}>Ces prix sont ceux affichés dans l’application. Laissez une case vide pour garder le prix officiel (en gris). Tapez <b>devis</b> pour afficher « Sur devis ».</Note>
+    <Card title="Formule 1 : analyse fécale" sub="Prix par mois, en FCFA.">
+      <div className="tablewrap"><table><thead><tr><th>Pack</th><th className="num">Comptes</th><th className="num">Analyses / mois</th><th>Prix / mois</th><th className="num">Par analyse</th></tr></thead>
+        <tbody>{cat.packs.map(p => <tr key={p.id}><td><b>{p.name}</b></td><td className="num">{p.accounts}{p.key === 'entreprise' ? ' et +' : ''}</td><td className="num">{p.analyses}</td><td>{field(p.id, base[p.id])}</td><td className="num">{p.price ? fcfa(Math.round(p.price / p.analyses)) : '—'}</td></tr>)}</tbody></table></div>
+      <div className="row2" style={{ marginTop: 10 }}>
+        <div><label className="f">+ 1 compte (FCFA / mois)</label><input type="text" inputMode="numeric" value={T.compte_supplementaire} onChange={e => setT({ ...T, compte_supplementaire: parseInt(e.target.value, 10) || 0 })} /></div>
+        <div><label className="f">+ 20 analyses (FCFA)</label><input type="text" inputMode="numeric" value={T.analyses_supplementaires} onChange={e => setT({ ...T, analyses_supplementaires: parseInt(e.target.value, 10) || 0 })} /></div>
+      </div>
+    </Card>
+    <Card title="Formule 2 : gestion de ferme" sub="Par nombre de sujets, prix par mois. Inclus : achat des poussins, aliment, santé, dépenses, ventes, stocks, clients, rentabilité par bande, rapports QR ; 2 comptes.">
+      <div className="tablewrap"><table><thead><tr><th>Palier</th><th>Sujets</th><th>Prix / mois</th></tr></thead>
+        <tbody>{cat.tiers.map(x => <tr key={x.id}><td><b>{x.name}</b></td><td>{x.max ? `${x.min} à ${x.max}` : `plus de ${x.min - 1}`}</td><td>{field(x.id, base[x.id])}</td></tr>)}</tbody></table></div>
+      <label className="switch" style={{ marginTop: 14 }}><input type="checkbox" checked={!!T.gestion_disponible} onChange={e => setT({ ...T, gestion_disponible: e.target.checked })} />La gestion de ferme est disponible à l’achat dans l’application</label>
+      <p className="muted" style={{ margin: 0 }}>Laissez décoché tant que les modules de gestion (achats, ventes, stocks, clients…) ne sont pas dans l’application : les éleveurs voient alors « Bientôt » et ne peuvent pas choisir cette formule.</p>
+    </Card>
+    <Card title="Formule 3 : pack complet" sub="Somme de l’analyse et de la gestion, moins la réduction, arrondie aux 50 FCFA supérieurs.">
+      <label className="f">Réduction (%)</label><input type="text" inputMode="numeric" style={{ width: 100 }} value={T.reduction_pack} onChange={e => setT({ ...T, reduction_pack: Math.min(90, parseInt(e.target.value, 10) || 0) })} />
+      <div className="tablewrap" style={{ marginTop: 12 }}><table><thead><tr><th>Combinaison</th><th className="num">Somme</th><th className="num">Pack complet</th><th className="num">Économie</th></tr></thead>
+        <tbody>{[['solo', 1], ['solo', 2], ['equipe', 3], ['pro', 4], ['entreprise', 6]].map(([k, n]) => { const a = cat.packs.find(p => p.key === k), g = cat.tiers.find(x => x.n === n), pr = packPrice(a, g, cat.discount), sum = a.price + g.price; return <tr key={k + n}><td>{a.name.replace('Analyse ', '')} + {g.name}</td><td className="num">{fcfa(sum)}</td><td className="num"><b>{fcfa(pr)}</b></td><td className="num">{fcfa(sum - pr)}</td></tr>; })}</tbody></table></div>
+    </Card>
+    <div className="actions"><button className="btn" type="button" onClick={async () => { try { await setC('tarifs', T); toast('Tarifs enregistrés : visibles dans l’application.'); } catch (e) { toast('Enregistrement : ' + e.message, true); } }}>Enregistrer les tarifs</button></div>
+  </>;
 }
 
 const STOCKS = [['en_stock', 'En stock'], ['limite', 'Stock limité'], ['rupture', 'Rupture'], ['inconnu', 'Non renseigné']];
@@ -176,6 +215,6 @@ function SheetsEditor({ all, reload }) {
 
 export default function Content() {
   return <><SubTabs items={TABS} /><Routes>
-    <Route index element={<Announce />} /><Route path="formules" element={<Plans />} /><Route path="pharmacies" element={<Pharmacies />} /><Route path="fiches" element={<Sheets />} />
+    <Route index element={<Announce />} /><Route path="tarifs" element={<Tarifs />} /><Route path="formules" element={<Plans />} /><Route path="pharmacies" element={<Pharmacies />} /><Route path="fiches" element={<Sheets />} />
   </Routes></>;
 }
