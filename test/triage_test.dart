@@ -24,7 +24,7 @@ void main() {
     });
 
     test('signes concordants : fiabilité forte', () {
-      final r = Triage.combine(photo(c: 0.90, h: 0.06), {'blood', 'age_young', 'huddle'});
+      final r = Triage.combine(photo(c: 0.90, h: 0.06), {'blood', 'age_young', 'huddle', 'thirst'});
       expect(r.disease, Disease.coccidiosis);
       expect(r.reliability, Reliability.high);
       expect(r.signsAgree, isTrue);
@@ -68,7 +68,7 @@ void main() {
 
     test('les signes peuvent contredire la photo', () {
       // Photo « saine », mais sang dans les fientes chez des jeunes en boule.
-      final r = Triage.combine(photo(h: 0.80, c: 0.15), {'blood', 'age_young', 'huddle'});
+      final r = Triage.combine(photo(h: 0.80, c: 0.15), {'blood', 'age_young', 'huddle', 'thirst'});
       expect(r.disease, Disease.coccidiosis);
       expect(r.signsAgree, isFalse);
       expect(r.reliability, isNot(Reliability.high));
@@ -82,7 +82,7 @@ void main() {
     });
 
     test('poussins à diarrhée blanche : salmonellose', () {
-      final r = Triage.combine(photo(s: 0.70, h: 0.25), {'age_chick', 'white_vent', 'death_chicks'});
+      final r = Triage.combine(photo(s: 0.70, h: 0.25), {'age_chick', 'white_vent', 'death_chicks', 'yellow'});
       expect(r.disease, Disease.salmonella);
       expect(r.reliability, Reliability.high);
     });
