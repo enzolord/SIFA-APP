@@ -1,4 +1,4 @@
-# SIFA App
+# SIFA
 
 Application Android de détection de maladies avicoles à partir de photos de fientes (poulets de chair et poules pondeuses).
 
@@ -30,3 +30,10 @@ Prochain sprint : caméra, modèle TFLite embarqué, stockage local, Supabase.
 - Historique en mémoire ; résultat avec conseils et avertissement légal
 - Ma ferme : bandes, saisie du jour (mortalité, aliment, eau, poids), stocks avec jours restants, finances (ventes, dépenses, marge), tâches
 - Sauvegarde locale : `sifa.json` et photos dans les documents de l'app (`lib/services/persistence.dart`), rechargées au démarrage
+
+## Mettre à jour le modèle d'analyse (sans réinstaller l'app)
+
+1. Entraîner avec `tools/SIFA_entrainement_v2.ipynb` (Colab, GPU T4) → `sifa_fp16.tflite` + `labels.json`.
+2. `python tools/publier_modele.py sifa_fp16.tflite labels.json 2` (version > précédente) → dossier `a_publier/`.
+3. Supabase : exécuter `supabase/modeles_bucket.sql` (une fois), puis déposer `sifa_v2.tflite` et `manifest.json` dans le bucket `modeles`.
+4. Les téléphones récupèrent le modèle au prochain lancement avec Internet ; vérification taille + SHA-256, retour au modèle livré en cas de problème.

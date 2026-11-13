@@ -7,6 +7,7 @@ import 'screens/shell.dart';
 import 'services/analysis_store.dart';
 import 'services/auth_service.dart';
 import 'services/classifier.dart';
+import 'services/model_store.dart';
 import 'services/persistence.dart';
 import 'services/session.dart';
 import 'theme/theme.dart';
@@ -16,6 +17,9 @@ Future<void> main() async {
   AnalysisStore.instance.classifier = TfliteClassifier();
   await Persistence.init();
   await AuthService.instance.init();
+  await ModelStore.instance.init();
+  // Cherche en arrière-plan un modèle plus récent publié après un nouvel entraînement.
+  ModelStore.instance.checkForUpdate();
   runApp(const SifaApp());
 }
 

@@ -75,7 +75,7 @@ class _EntryScreenState extends State<EntryScreen> {
                   onChanged: (b) => setState(() => _band = b),
                 ),
                 const SizedBox(height: 16),
-                _field('Oiseaux morts', _dead, 'oiseaux'),
+                _field('Poulets morts', _dead, 'poulets'),
                 _field('Aliment distribué', _feed, 'kg'),
                 _field('Eau consommée', _water, 'litres'),
                 _field("Poids moyen (pesée d'un échantillon)", _weight, 'g'),

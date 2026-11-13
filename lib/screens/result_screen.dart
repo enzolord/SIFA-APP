@@ -58,7 +58,7 @@ class ResultScreen extends StatelessWidget {
               SifaColors.danger,
               Icons.warning_rounded,
               'Alerte : maladie contagieuse grave possible',
-              'Une mortalité brutale ou des signes nerveux peuvent venir de la maladie de Newcastle ou de la grippe aviaire. Isolez la bande, ne vendez et ne déplacez aucun oiseau, et appelez tout de suite votre vétérinaire ou les services vétérinaires.',
+              'Une mortalité brutale ou des signes nerveux peuvent venir de la maladie de Newcastle ou de la grippe aviaire. Isolez la bande, ne vendez et ne déplacez aucun poulet, et appelez tout de suite votre vétérinaire ou les services vétérinaires.',
             ),
           ],
           const SizedBox(height: 16),

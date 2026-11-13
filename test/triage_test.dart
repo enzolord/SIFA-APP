@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -5,12 +6,14 @@ import 'package:sifa/data/knowledge.dart';
 import 'package:sifa/l10n/strings_en.dart';
 import 'package:sifa/models/diagnosis.dart';
 import 'package:sifa/services/classifier.dart';
+import 'package:sifa/services/model_store.dart';
 import 'package:sifa/services/triage.dart';
 
 /// Probabilités photo dans l'ordre de Disease.values : sain, coccidiose, salmonellose, Newcastle.
 List<double> photo({double h = 0.02, double c = 0.02, double s = 0.02, double n = 0.02}) => [h, c, s, n];
 
 void main() {
+  modelManifestTests();
   group('Triage : photo + signes', () {
     test('photo seule : jamais une fiabilité forte', () {
       final r = Triage.combine(photo(c: 0.94), {});
@@ -161,5 +164,23 @@ void main() {
         expect(enStrings.containsKey(t), isTrue, reason: 'Sans traduction : $t');
       }
     });
+  });
+}
+
+void modelManifestTests() {
+  group('ModelManifest', () {
+    String body({int version = 2, String file = 'sifa_v2.tflite', List<String>? labels, String? sha}) => jsonEncode({
+          'version': version,
+          'fichier': file,
+          'labels': labels ?? ['Autre', 'Coccidiosis', 'Healthy', 'New_Castle_Disease', 'Salmonella'],
+          'sha256': sha ?? 'a' * 64,
+          'taille': 8000000,
+        });
+    test('manifeste valide accepté', () => expect(ModelManifest.parse(body()), isNotNull));
+    test('nom de fichier dangereux refusé', () => expect(ModelManifest.parse(body(file: '../x.tflite')), isNull));
+    test('étiquette de maladie manquante refusée',
+        () => expect(ModelManifest.parse(body(labels: ['Autre', 'Healthy'])), isNull));
+    test('empreinte invalide refusée', () => expect(ModelManifest.parse(body(sha: 'abc')), isNull));
+    test('JSON cassé refusé', () => expect(ModelManifest.parse('{'), isNull));
   });
 }

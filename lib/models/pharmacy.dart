@@ -28,7 +28,7 @@ class Pharmacy {
 
 const _distance = Distance();
 
-/// Distance à vol d'oiseau en kilomètres.
+/// Distance à vol de poulet en kilomètres.
 double distanceKm(LatLng a, LatLng b) => _distance.as(LengthUnit.Kilometer, a, b);
 
 /// Copie triée de la plus proche à la plus éloignée de [from].

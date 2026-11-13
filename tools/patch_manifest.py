@@ -28,5 +28,8 @@ if "android.intent.action.DIAL" not in s:
     </queries>
 """
     s = s.replace("<application", q + "    <application", 1)
+# Nom affiché sous l'icône : « SIFA » (flutter create met le nom du projet en minuscules).
+import re
+s = re.sub(r'android:label="[^"]*"', 'android:label="SIFA"', s, count=1)
 p.write_text(s, encoding="utf-8")
 print("AndroidManifest.xml à jour.")

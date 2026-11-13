@@ -36,11 +36,11 @@ class BandDetailScreen extends StatelessWidget {
                 childAspectRatio: 1.5,
                 children: [
                   KpiCard(label: 'Jour', value: '${band.day}', sub: band.type.label),
-                  KpiCard(label: 'Oiseaux vivants', value: '${s.alive(band)}', sub: trf('sur {0}', [band.initialCount])),
+                  KpiCard(label: 'Poulets vivants', value: '${s.alive(band)}', sub: trf('sur {0}', [band.initialCount])),
                   KpiCard(
                     label: 'Mortalité cumulée',
                     value: '${s.mortalityPct(band).dec1} %',
-                    sub: trf('{0} oiseaux', [s.deadTotal(band)]),
+                    sub: trf('{0} poulets', [s.deadTotal(band)]),
                     subColor: s.mortalityPct(band) > 2 ? SifaColors.danger : SifaColors.ok,
                   ),
                   KpiCard(label: 'Aliment consommé', value: '${s.feedTotal(band).round()} kg'),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -8,6 +9,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:tflite_flutter/tflite_flutter.dart';
 
 import '../models/diagnosis.dart';
+import 'model_store.dart';
 
 /// Pourquoi une photo est refusée avant tout résultat.
 enum ScanIssue {
@@ -70,6 +72,7 @@ class TfliteClassifier implements Classifier {
   static const minConfidence = 0.55;
 
   Interpreter? _interpreter;
+  int _loadedVersion = -1;
 
   /// Pour chaque sortie du modèle : la maladie correspondante, ou null pour « Autre ».
   List<Disease?> _outputs = const [];
@@ -83,12 +86,40 @@ class TfliteClassifier implements Classifier {
     return null;
   }
 
+  /// Charge le modèle actif : le dernier modèle téléchargé s'il existe et fonctionne,
+  /// sinon celui livré dans l'application.
   Future<Interpreter> _load() async {
+    final store = ModelStore.instance;
     final existing = _interpreter;
-    if (existing != null) return existing;
-    final labels = (jsonDecode(await rootBundle.loadString(_labelsAsset)) as List).cast<String>();
-    _outputs = [for (final l in labels) diseaseForLabel(l)];
-    return _interpreter = await Interpreter.fromAsset(_modelAsset, options: InterpreterOptions()..threads = 2);
+    if (existing != null && _loadedVersion == store.version) return existing;
+    existing?.close();
+    _interpreter = null;
+
+    final options = InterpreterOptions()..threads = 2;
+    final path = store.path;
+    final labels = store.labels;
+    if (path != null && labels != null) {
+      try {
+        final it = Interpreter.fromFile(File(path), options: options);
+        final inShape = it.getInputTensor(0).shape;
+        final outShape = it.getOutputTensor(0).shape;
+        if (inShape.length == 4 && inShape[1] == _size && inShape[2] == _size && outShape.last == labels.length) {
+          _outputs = [for (final l in labels) diseaseForLabel(l)];
+          _loadedVersion = store.version;
+          return _interpreter = it;
+        }
+        it.close();
+        debugPrint('Modèle téléchargé incompatible : $inShape -> $outShape');
+      } catch (e) {
+        debugPrint('Modèle téléchargé illisible : $e');
+      }
+      await store.discardDownloaded();
+    }
+
+    final bundled = (jsonDecode(await rootBundle.loadString(_labelsAsset)) as List).cast<String>();
+    _outputs = [for (final l in bundled) diseaseForLabel(l)];
+    _loadedVersion = store.version;
+    return _interpreter = await Interpreter.fromAsset(_modelAsset, options: options);
   }
 
   @override

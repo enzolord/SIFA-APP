@@ -52,7 +52,7 @@ class BandsScreen extends StatelessWidget {
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 Tx(b.name, style: t.titleMedium),
                                 const SizedBox(height: 2),
-                                Tx(trf('{0} · jour {1} · {2} oiseaux', [tr(b.type.label), b.day, s.alive(b)]), style: t.bodyMedium),
+                                Tx(trf('{0} · jour {1} · {2} poulets', [tr(b.type.label), b.day, s.alive(b)]), style: t.bodyMedium),
                                 const SizedBox(height: 10),
                                 Tx(
                                   trf('Mortalité {0} %', [s.mortalityPct(b).dec1]),

@@ -104,7 +104,7 @@ class CommunityStore extends ChangeNotifier {
       authorName: 'Équipe SIFA',
       title: 'Suivez le calendrier de vaccination',
       body: 'Faites établir votre calendrier avec un vétérinaire, notez chaque date dans SIFA '
-          'et gardez les vaccins au frais jusqu’à l’utilisation. En cas de doute sur un oiseau '
+          'et gardez les vaccins au frais jusqu’à l’utilisation. En cas de doute sur un poulet '
           'malade, demandez conseil avant de vacciner.',
       category: PostCategory.vaccination,
       at: DateTime(2026, 10, 20),
