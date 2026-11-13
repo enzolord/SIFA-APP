@@ -52,7 +52,7 @@ class FermeHub extends StatelessWidget {
                   color: SifaColors.warn.withValues(alpha: .14),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
-                    child: Text(trf('Vous avez {0} sujets, au-delà de votre formule Gestion {1} (maximum {2}). Passez à la formule supérieure.', [s.totalPlaced, tier!, cap!])),
+                    child: Text(trf('Vous avez {0} sujets, au-delà de votre formule Gestion {1} (maximum {2}). Passez à la formule supérieure.', [s.totalPlaced, tier!, cap])),
                   ),
                 ),
               ],
