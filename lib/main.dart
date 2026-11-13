@@ -11,6 +11,7 @@ import 'services/classifier.dart';
 import 'services/model_store.dart';
 import 'services/persistence.dart';
 import 'services/remote_content.dart';
+import 'services/sample_uploader.dart';
 import 'services/session.dart';
 import 'theme/theme.dart';
 
@@ -25,7 +26,7 @@ Future<void> main() async {
   // Contenu modifiable à distance (annonces, pharmacies, formules, fiches) : cache puis mise à jour en direct.
   RemoteContent.instance.start();
   // Mesure d'usage anonyme (désactivable dans Profil).
-  Analytics.instance.start();
+  Analytics.instance.start().then((_) => SampleUploader.instance.init());
   runApp(const SifaApp());
 }
 

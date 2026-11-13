@@ -5,6 +5,7 @@ import '../l10n/l10n.dart';
 import '../models/diagnosis.dart';
 import '../services/analysis_store.dart';
 import '../services/analytics.dart';
+import '../services/sample_uploader.dart';
 import '../services/triage.dart';
 import '../theme/colors.dart';
 import '../widgets/disclaimer.dart';
@@ -130,6 +131,8 @@ class ResultScreen extends StatelessWidget {
           if (Analytics.instance.enabled) ...[
             const SizedBox(height: 16),
             _FeedbackCard(diagnosis: d),
+            const SizedBox(height: 12),
+            _ShareCard(diagnosis: d),
           ],
           const SizedBox(height: 8),
           const Disclaimer(),
@@ -261,6 +264,73 @@ class _FeedbackCardState extends State<_FeedbackCard> {
           ],
         ]),
       ),
+    );
+  }
+}
+
+/// Bouton pour partager la photo de cette analyse (si le partage automatique est désactivé).
+class _ShareCard extends StatefulWidget {
+  const _ShareCard({required this.diagnosis});
+  final Diagnosis diagnosis;
+
+  @override
+  State<_ShareCard> createState() => _ShareCardState();
+}
+
+class _ShareCardState extends State<_ShareCard> {
+  bool _busy = false;
+  bool _failed = false;
+
+  Future<void> _share() async {
+    setState(() {
+      _busy = true;
+      _failed = false;
+    });
+    final ok = await SampleUploader.instance.share(widget.diagnosis);
+    if (mounted) {
+      setState(() {
+        _busy = false;
+        _failed = !ok;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return ListenableBuilder(
+      listenable: SampleUploader.instance,
+      builder: (context, _) {
+        final done = SampleUploader.instance.wasShared(widget.diagnosis);
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: done
+                ? Row(children: [
+                    const Icon(Icons.check_circle_rounded, color: SifaColors.brand),
+                    const SizedBox(width: 12),
+                    Expanded(child: Tx('Photo envoyée, merci !', style: t.bodyMedium)),
+                  ])
+                : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Tx('Aider SIFA à progresser', style: t.titleSmall),
+                    const SizedBox(height: 4),
+                    Tx("Envoyez cette photo, sans votre nom. Un vétérinaire la vérifiera avant de s'en servir.", style: t.bodySmall),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _busy ? null : _share,
+                      icon: _busy
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.upload_rounded),
+                      label: const Tx('Partager cette photo'),
+                    ),
+                    if (_failed) ...[
+                      const SizedBox(height: 8),
+                      Tx("Envoi impossible. Vérifiez votre connexion et réessayez.", style: t.bodySmall),
+                    ],
+                  ]),
+          ),
+        );
+      },
     );
   }
 }

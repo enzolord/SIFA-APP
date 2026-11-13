@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'abonnement_screen.dart';
 import '../services/analytics.dart';
+import '../services/sample_uploader.dart';
 import '../services/auth_service.dart';
 import '../services/session.dart';
 import '../l10n/l10n.dart';
@@ -48,6 +49,8 @@ class ProfileScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         const _UsageSwitch(),
+        const SizedBox(height: 12),
+        const _ShareSwitch(),
         const SizedBox(height: 12),
         const Card(child: ListTile(leading: Icon(Icons.sync), title: Tx('Synchronisation'), subtitle: Tx('Bientôt'))),
         const SizedBox(height: 12),
@@ -131,6 +134,27 @@ class _UsageSwitchState extends State<_UsageSwitch> {
           await Analytics.instance.setEnabled(v);
           if (mounted) setState(() {});
         },
+      ),
+    );
+  }
+}
+
+/// Partage automatique des photos analysées, avec l'accord de l'éleveur (désactivé par défaut).
+class _ShareSwitch extends StatelessWidget {
+  const _ShareSwitch();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: SampleUploader.instance,
+      builder: (context, _) => Card(
+        child: SwitchListTile(
+          secondary: const Icon(Icons.add_a_photo_outlined),
+          title: const Tx('Partager mes photos pour améliorer SIFA'),
+          subtitle: const Tx("Chaque photo analysée est envoyée sans votre nom. Un vétérinaire la vérifie avant qu'elle serve à entraîner le modèle."),
+          value: SampleUploader.instance.auto,
+          onChanged: (v) => SampleUploader.instance.setAuto(v),
+        ),
       ),
     );
   }

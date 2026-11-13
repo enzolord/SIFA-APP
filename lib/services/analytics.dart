@@ -35,6 +35,9 @@ class Analytics with WidgetsBindingObserver {
   DateTime? _lastOpen;
 
   bool get enabled => _enabled;
+
+  /// Identifiant aléatoire de ce téléphone (vide tant que la mesure n'a pas démarré).
+  String get deviceId => _device;
   @visibleForTesting
   List<Map<String, Object?>> get pending => List.unmodifiable(_queue);
 

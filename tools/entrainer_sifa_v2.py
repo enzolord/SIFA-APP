@@ -17,6 +17,9 @@ Options utiles :
   --perso DOSSIER   vos propres photos « pas une fiente » (sol, litière, aliment, mains, objets) :
                     très recommandé, 100 à 300 photos prises dans vos poulaillers.
   --negatifs aucun  entraîne sans classe « Autre » (comme la v1).
+  --terrain DOSSIER photos réelles d'éleveurs étiquetées, exportées par l'outil d'administration
+                    (ZIP « sifa_terrain_DATE » décompressé : train/ val/ test_terrain/). Elles sont
+                    ajoutées à l'entraînement ; test_terrain/ ne sert qu'à mesurer, jamais à entraîner.
   --cpu             autorise l'entraînement sans GPU (très lent).
 """
 import argparse, glob, json, os, random, shutil, sys, tarfile, time
@@ -35,6 +38,8 @@ ap.add_argument('--epoques1', type=int, default=8)
 ap.add_argument('--epoques2', type=int, default=15)
 ap.add_argument('--negatifs', default='auto', help="auto (téléchargement), aucun, ou un dossier d'images")
 ap.add_argument('--perso', default='', help='dossier de vos photos « pas une fiente » (facultatif)')
+ap.add_argument('--terrain', default='', help="dossier du ZIP de photos terrain (train/ val/ test_terrain/)")
+ap.add_argument('--terrain-x', type=int, default=3, dest='terrain_x', help='combien de fois chaque photo terrain est répétée à l\'entraînement')
 ap.add_argument('--poids', default='imagenet', help='imagenet, ou aucun (tests seulement)')
 ap.add_argument('--cpu', action='store_true', help="autoriser l'entraînement sans GPU")
 a = ap.parse_args()
@@ -162,6 +167,32 @@ else:
         print("ATTENTION : aucune vraie photo « pas une fiente » (ni téléchargement, ni --perso).\n"
               "Le modèle saura refuser les couleurs unies, mais mal les objets. Ajoutez --perso DOSSIER.")
 
+
+# ───────────────────────── 2b. Photos terrain (éleveurs) ─────────────────────────
+terrain_test = []   # (chemin, nom de classe) : mesure sur de vraies photos, jamais utilisées pour entraîner
+if a.terrain:
+    for split in ('train', 'val'):          # nettoyage : relancer ne doit pas dupliquer les photos
+        for f in glob.glob(os.path.join(a.donnees, split, '*', 'terrain_*')):
+            os.remove(f)
+    ajoutees = {'train': 0, 'val': 0}
+    for split in ('train', 'val'):
+        for chemin in images_de(os.path.join(a.terrain, split)):
+            classe = os.path.basename(os.path.dirname(chemin))
+            dest = os.path.join(a.donnees, split, classe)
+            if not os.path.isdir(dest):
+                print(f'  classe inconnue ignorée : {classe}')
+                continue
+            copies = a.terrain_x if split == 'train' else 1
+            for k in range(copies):
+                shutil.copy(chemin, os.path.join(dest, f'terrain_{k}_{os.path.basename(chemin)}'))
+            ajoutees[split] += 1
+    for chemin in images_de(os.path.join(a.terrain, 'test_terrain')):
+        terrain_test.append((chemin, os.path.basename(os.path.dirname(chemin))))
+    print(f"Photos terrain : {ajoutees['train']} en entraînement (x{a.terrain_x}), {ajoutees['val']} en validation, "
+          f"{len(terrain_test)} réservées au test terrain.")
+    if ajoutees['train'] + ajoutees['val'] == 0:
+        sys.exit(f'Aucune photo trouvée dans {a.terrain}/train et /val. Vérifiez --terrain.')
+
 # ───────────────────────── 3. Données ─────────────────────────
 def charger(split):
     return keras.utils.image_dataset_from_directory(
@@ -262,6 +293,16 @@ if AUTRE in classes:
               f"({int(fientes_t.sum())} images)\n"
               f"  exactitude entre maladies (fientes seules) : "
               f"{100 * (p_keras[fientes_t] == y[fientes_t]).mean():.1f} %\n")
+
+if terrain_test:
+    vus = [(c, n) for c, n in terrain_test if n in classes]
+    if vus:
+        X = np.stack([np.asarray(Image.open(c).convert('RGB').resize(S, Image.BILINEAR), np.float32) for c, _ in vus])
+        yt = np.array([classes.index(n) for _, n in vus])
+        pt = np.argmax(modele.predict(X, batch_size=a.lot, verbose=0), axis=1)
+        acc_terrain = float((pt == yt).mean())
+        texte += (f"\nEXACTITUDE TERRAIN : {acc_terrain:.4f} ({len(vus)} photos réelles d'éleveurs, jamais vues)\n"
+                  f"{classification_report(yt, pt, labels=etiquettes, target_names=classes, digits=3, zero_division=0)}")
 print(texte)
 
 # ───────────────────────── 6. Export TFLite ─────────────────────────

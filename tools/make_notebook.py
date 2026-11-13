@@ -77,10 +77,22 @@ print(n, "photo(s) dans le dossier Drive « sifa_autres ».")
 if n == 0:
     print("Vous pouvez continuer sans, mais le modèle refusera mieux les mauvaises photos si vous en ajoutez.")
 """),
+md("## 4b. Photos terrain des éleveurs (facultatif)\n\nAprès avoir étiqueté des photos dans l'administration SIFA (onglet « Jeu de données »), téléchargez le ZIP, envoyez-le ici et décompressez-le."),
+code("""
+TERRAIN = ''
+zips = sorted(glob.glob('/content/sifa_terrain_*.zip'))
+if not zips:
+    print("Pas de ZIP terrain : l'entraînement se fera sans. Pour en ajouter, envoyez le ZIP via le dossier à gauche (Fichiers).")
+else:
+    shutil.rmtree('/content/terrain', ignore_errors=True)
+    zipfile.ZipFile(zips[-1]).extractall('/content/terrain')
+    TERRAIN = sorted(os.path.dirname(p) for p in glob.glob('/content/terrain/**/train', recursive=True))[0]
+    print('Photos terrain prêtes dans', TERRAIN)
+"""),
 md("## 5. Entraîner (15 à 30 minutes avec le GPU)\n\nLe résultat est écrit directement dans Drive, dossier `sifa_sortie_v2` : rien n'est perdu si la session se coupe à la fin."),
 code("""
 SORTIE = '/content/drive/MyDrive/sifa_sortie_v2'
-!python /content/entrainer_sifa_v2.py --donnees "{DONNEES}" --sortie "{SORTIE}" --perso "{PERSO}"
+!python /content/entrainer_sifa_v2.py --donnees "{DONNEES}" --sortie "{SORTIE}" --perso "{PERSO}" {("--terrain " + chr(34) + TERRAIN + chr(34)) if TERRAIN else ""}
 """),
 md("## 6. Lire le rapport et télécharger les 3 fichiers à envoyer"),
 code("""

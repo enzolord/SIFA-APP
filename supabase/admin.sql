@@ -216,7 +216,69 @@ create policy "modeles_admin_ecriture" on storage.objects for all to authenticat
   using (bucket_id = 'modeles' and public.is_admin())
   with check (bucket_id = 'modeles' and public.is_admin());
 
--- 6. Contenu de départ (ne remplace rien d'existant)
+-- 6. Photos partagées par les éleveurs (avec leur accord) pour améliorer le modèle
+--    La photo est dans le bucket privé « echantillons » (chemin : <appareil>/<ref>.jpg).
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('echantillons', 'echantillons', false, 2097152, array['image/jpeg'])
+on conflict (id) do update set public = false, file_size_limit = 2097152, allowed_mime_types = array['image/jpeg'];
+
+drop policy if exists "echantillons_depot" on storage.objects;
+create policy "echantillons_depot" on storage.objects for insert to anon, authenticated
+  with check (bucket_id = 'echantillons');
+drop policy if exists "echantillons_admin" on storage.objects;
+create policy "echantillons_admin" on storage.objects for all to authenticated
+  using (bucket_id = 'echantillons' and public.is_admin())
+  with check (bucket_id = 'echantillons' and public.is_admin());
+
+create table if not exists public.echantillons (
+  id             uuid primary key default gen_random_uuid(),
+  cree_le        timestamptz not null default now(),
+  appareil       text not null check (char_length(appareil) between 8 and 64),
+  ref            text not null check (char_length(ref) between 1 and 40),     -- même référence que l'événement « analyse »
+  photo_path     text not null check (char_length(photo_path) between 5 and 200),
+  maladie_app    text check (maladie_app in ('healthy','coccidiosis','salmonella','newcastle')),   -- ce que SIFA a annoncé
+  confiance      real check (confiance between 0 and 1),
+  fiabilite      text check (fiabilite in ('high','medium','low')),
+  signes         jsonb not null default '[]'::jsonb check (pg_column_size(signes) < 2000),
+  langue         text check (langue in ('fr','en')),
+  version_app    text check (char_length(version_app) <= 20),
+  statut         text not null default 'a_valider' check (statut in ('a_valider','valide','rejete')),
+  classe_validee text check (classe_validee in ('Coccidiosis','Healthy','New_Castle_Disease','Salmonella','Autre')),
+  valide_par     uuid references public.profiles(id) on delete set null,
+  valide_le      timestamptz,
+  notes          text check (char_length(notes) <= 500),
+  unique (appareil, ref),
+  check ((statut = 'valide') = (classe_validee is not null))
+);
+create index if not exists echantillons_statut_idx on public.echantillons (statut, cree_le desc);
+alter table public.echantillons enable row level security;
+drop policy if exists ech_depot on public.echantillons;
+create policy ech_depot on public.echantillons for insert to anon, authenticated
+  with check (statut = 'a_valider' and classe_validee is null and valide_par is null);
+drop policy if exists ech_admin on public.echantillons;
+create policy ech_admin on public.echantillons for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+-- Historique des entraînements du modèle
+create table if not exists public.entrainements (
+  id          uuid primary key default gen_random_uuid(),
+  cree_le     timestamptz not null default now(),
+  nom         text not null check (char_length(nom) between 1 and 80),
+  version_modele int,                       -- numéro publié dans l'application (null = pas publié)
+  nb_train    int, nb_val int, nb_test int,
+  nb_terrain  int,                          -- photos réelles validées utilisées
+  exactitude  real check (exactitude between 0 and 1),
+  f1          real check (f1 between 0 and 1),
+  exactitude_terrain real check (exactitude_terrain between 0 and 1),
+  rapport     text check (char_length(rapport) <= 20000),
+  notes       text check (char_length(notes) <= 1000)
+);
+alter table public.entrainements enable row level security;
+drop policy if exists entr_admin on public.entrainements;
+create policy entr_admin on public.entrainements for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+-- 7. Contenu de départ (ne remplace rien d'existant)
 insert into public.contenu (cle, valeur) values
   ('annonce',     '{"actif": false, "niveau": "info", "titre": {"fr": "", "en": ""}, "texte": {"fr": "", "en": ""}}'),
   ('maintenance', '{"actif": false, "message": {"fr": "SIFA est en maintenance. Revenez dans quelques minutes.", "en": "SIFA is under maintenance. Please come back in a few minutes."}}'),
