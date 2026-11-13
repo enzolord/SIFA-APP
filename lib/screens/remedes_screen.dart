@@ -14,7 +14,7 @@ class RemedesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final info = diseaseInfo[disease]!;
-    final sheet = diseaseSheets[disease]!;
+    final sheet = sheetFor(disease);
     return DefaultTabController(
       length: 4,
       child: Scaffold(

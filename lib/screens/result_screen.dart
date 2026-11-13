@@ -18,7 +18,7 @@ class ResultScreen extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final d = diagnosis;
     final info = d.info;
-    final sheet = diseaseSheets[d.disease]!;
+    final sheet = sheetFor(d.disease);
     final probs = d.photoProbs;
     final triage = probs == null ? null : Triage.combine(probs, d.signs);
     final redFlag = triage?.redFlag ?? false;

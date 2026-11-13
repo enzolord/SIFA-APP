@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/diagnosis.dart';
+import 'auth_service.dart';
 import 'classifier.dart';
 
 /// Historique des analyses. Les photos sont enregistrées sur le téléphone
@@ -17,9 +18,35 @@ class AnalysisStore extends ChangeNotifier {
   List<Diagnosis> get items => List.unmodifiable(_items.reversed);
   Diagnosis? get last => _items.isEmpty ? null : _items.last;
 
+  static const _dbName = {
+    Disease.healthy: 'sain',
+    Disease.coccidiosis: 'coccidiose',
+    Disease.salmonella: 'salmonellose',
+    Disease.newcastle: 'newcastle',
+  };
+
+  /// Statistiques d'usage pour le tableau de bord : résultat et confiance seulement, jamais la photo.
+  /// Sans compte connecté ou sans réseau, rien n'est envoyé (l'analyse reste locale).
+  Future<void> _report(Diagnosis d) async {
+    final auth = AuthService.instance;
+    final client = auth.client;
+    final uid = auth.user?.id;
+    if (client == null || uid == null) return;
+    try {
+      await client.from('analyses').insert({
+        'user_id': uid,
+        'maladie': _dbName[d.disease],
+        'confiance': d.confidence.clamp(0.0, 1.0),
+      });
+    } catch (e) {
+      debugPrint('Statistiques non envoyées : $e');
+    }
+  }
+
   void add(Diagnosis d) {
     _items.add(d);
     notifyListeners();
+    _report(d);
     final saver = photoSaver;
     if (saver != null && d.photoPath == null) {
       saver(d.photo).then((path) {

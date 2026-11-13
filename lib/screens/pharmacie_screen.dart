@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/pharmacy.dart';
 import '../services/locator.dart';
 import '../services/pharmacy_directory.dart';
+import '../services/remote_content.dart';
 import '../services/routing.dart';
 import '../theme/colors.dart';
 import '../widgets/status_chip.dart';
@@ -21,7 +22,8 @@ class PharmacieScreen extends StatefulWidget {
 
 class _PharmacieScreenState extends State<PharmacieScreen> {
   final _map = MapController();
-  final _items = PharmacyDirectory.sample;
+  /// Liste reçue de l'administration ; l'exemple intégré ne sert que si elle n'a jamais été reçue.
+  List<Pharmacy> get _items => RemoteContent.instance.pharmacies ?? PharmacyDirectory.sample;
 
   LatLng? _me;
   bool _locating = true;
@@ -35,7 +37,25 @@ class _PharmacieScreenState extends State<PharmacieScreen> {
   @override
   void initState() {
     super.initState();
+    RemoteContent.instance.addListener(_onRemote);
     _locate();
+  }
+
+  @override
+  void dispose() {
+    RemoteContent.instance.removeListener(_onRemote);
+    super.dispose();
+  }
+
+  /// L'administration a modifié l'annuaire pendant que l'écran est ouvert.
+  void _onRemote() {
+    if (!mounted) return;
+    setState(() {
+      if (_selected != null && !_items.any((p) => p.id == _selected!.id)) {
+        _selected = null;
+        _route = null;
+      }
+    });
   }
 
   Future<void> _locate() async {

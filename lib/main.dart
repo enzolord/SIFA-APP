@@ -9,6 +9,7 @@ import 'services/auth_service.dart';
 import 'services/classifier.dart';
 import 'services/model_store.dart';
 import 'services/persistence.dart';
+import 'services/remote_content.dart';
 import 'services/session.dart';
 import 'theme/theme.dart';
 
@@ -20,6 +21,8 @@ Future<void> main() async {
   await ModelStore.instance.init();
   // Cherche en arrière-plan un modèle plus récent publié après un nouvel entraînement.
   ModelStore.instance.checkForUpdate();
+  // Contenu modifiable à distance (annonces, pharmacies, formules, fiches) : cache puis mise à jour en direct.
+  RemoteContent.instance.start();
   runApp(const SifaApp());
 }
 
@@ -29,7 +32,7 @@ class SifaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([Session.instance, L10n.instance]),
+      listenable: Listenable.merge([Session.instance, L10n.instance, RemoteContent.instance]),
       builder: (context, _) => MaterialApp(
         title: 'SIFA',
         debugShowCheckedModeBanner: false,
@@ -43,9 +46,42 @@ class SifaApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
+        builder: (context, child) {
+          final maintenance = RemoteContent.instance.maintenanceMessage;
+          if (maintenance == null) return child!;
+          return _MaintenanceScreen(message: localizedMaintenance(maintenance));
+        },
         home: Session.instance.onboarded
             ? Shell(key: ValueKey(L10n.instance.lang))
             : const OnboardingFlow(),
+      ),
+    );
+  }
+}
+
+/// Le message vient de l'administration (déjà dans la bonne langue) ; le message par défaut est traduit.
+String localizedMaintenance(String m) => tr(m);
+
+/// Écran affiché à la place de l'application quand l'administration active la maintenance.
+class _MaintenanceScreen extends StatelessWidget {
+  const _MaintenanceScreen({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.build_circle_outlined, size: 64),
+              const SizedBox(height: 16),
+              Text(message, style: t.titleLarge, textAlign: TextAlign.center),
+            ]),
+          ),
+        ),
       ),
     );
   }

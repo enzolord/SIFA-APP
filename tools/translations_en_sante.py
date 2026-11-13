@@ -200,6 +200,12 @@ EN_SANTE = {
 "Un poulet qui ne mange plus fait des fientes vertes, quelle que soit la maladie.":"A chicken that stops eating passes green droppings, whatever the disease.",
 "Chez l'homme, ce virus peut donner une conjonctivite passagère. Lavez-vous les mains après avoir touché les poulets.":"In people, this virus can cause a passing conjunctivitis. Wash your hands after handling the chickens.",
 # --- formulaire adaptatif
+'Prix bientôt communiqué':'Price coming soon',
+"Saisissez votre code d'activation.":'Enter your activation code.',
+'Connectez-vous avec Google (onglet Profil) pour activer un code.':'Sign in with Google (Profile tab) to activate a code.',
+'Formule activée. Merci !':'Plan activated. Thank you!',
+'Code invalide ou déjà utilisé.':'Invalid or already used code.',
+'SIFA est en maintenance.':'SIFA is under maintenance.',
 'Non connecté':'Not signed in',
 'Se déconnecter':'Sign out',
 'Quelques questions sur vos poulets rendent le résultat plus fiable.':'A few questions about your chickens make the result more reliable.',

@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
+
 import '../models/diagnosis.dart';
+import '../services/remote_content.dart';
 
 /// Fiches maladies de SIFA.
 ///
@@ -232,3 +235,49 @@ const diseaseSheets = <Disease, DiseaseSheet>{
     humanRisk: 'Chez l\'homme, ce virus peut donner une conjonctivite passagère. Lavez-vous les mains après avoir touché les poulets.',
   ),
 };
+
+
+/// Fiche d'une maladie, avec les modifications faites dans l'administration.
+/// Une liste fournie par l'administration remplace celle de l'application ; une liste absente
+/// ou vide laisse la fiche intégrée.
+DiseaseSheet sheetFor(Disease d) {
+  final base = diseaseSheets[d]!;
+  final over = RemoteContent.instance.section('fiches')[d.name];
+  return applySheetOverride(base, over is Map ? Map<String, dynamic>.from(over) : const {});
+}
+
+@visibleForTesting
+DiseaseSheet applySheetOverride(DiseaseSheet base, Map<String, dynamic> o) {
+  List<String> lines(String key, List<String> fallback) {
+    final v = o[key];
+    if (v is! List) return fallback;
+    final out = [for (final x in v) localized(x).trim()].where((x) => x.isNotEmpty).toList();
+    return out.isEmpty ? fallback : out;
+  }
+
+  List<KbItem> items(String key, List<KbItem> fallback) {
+    final v = o[key];
+    if (v is! List) return fallback;
+    final out = <KbItem>[];
+    for (final x in v) {
+      if (x is! Map) continue;
+      final title = localized(x['titre']).trim();
+      final body = localized(x['texte']).trim();
+      if (title.isEmpty && body.isEmpty) continue;
+      final ev = Evidence.values.where((e) => e.name == x['preuve']);
+      out.add(KbItem(title, body, ev.isEmpty ? null : ev.first));
+    }
+    return out.isEmpty ? fallback : out;
+  }
+
+  final human = localized(o['risque_humain']).trim();
+  return DiseaseSheet(
+    recognize: items('reconnaitre', base.recognize),
+    now: lines('maintenant', base.now),
+    scientific: items('scientifique', base.scientific),
+    artisanal: items('artisanal', base.artisanal),
+    prevention: lines('prevention', base.prevention),
+    confusions: lines('confusions', base.confusions),
+    humanRisk: human.isEmpty ? base.humanRisk : human,
+  );
+}

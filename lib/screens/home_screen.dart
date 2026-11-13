@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../services/remote_content.dart';
+
 import '../services/analysis_store.dart';
 import '../services/community_store.dart';
 import '../services/nav.dart';
@@ -40,7 +42,13 @@ class HomeScreen extends StatelessWidget {
             ]),
           ),
         ]),
-        const SizedBox(height: 20),
+        ListenableBuilder(
+          listenable: RemoteContent.instance,
+          builder: (context, _) {
+            final a = RemoteContent.instance.announcement;
+            return a == null ? const SizedBox(height: 20) : _AnnouncementBanner(a);
+          },
+        ),
         _ScanHero(onScan: () => AppNav.go(AppNav.scan)),
         const SectionHeader('Mes services'),
         GridView.count(
@@ -209,6 +217,37 @@ class _ServiceTile extends StatelessWidget {
           ]),
         ),
       ),
+    );
+  }
+}
+
+/// Annonce publiée depuis l'administration (info, attention, urgent).
+class _AnnouncementBanner extends StatelessWidget {
+  const _AnnouncementBanner(this.a);
+  final Announcement a;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final (fg, bg, icon) = switch (a.level) {
+      'danger' => (SifaColors.danger, SifaColors.dangerSoft, Icons.warning_rounded),
+      'warn' => (SifaColors.warn, SifaColors.warnSoft, Icons.error),
+      _ => (SifaColors.brand, SifaColors.brandSoft, Icons.campaign_rounded),
+    };
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(icon, color: fg),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (a.title.isNotEmpty) Text(a.title, style: t.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w700)),
+            if (a.text.isNotEmpty) Text(a.text, style: t.bodyMedium?.copyWith(color: SifaColors.ink)),
+          ]),
+        ),
+      ]),
     );
   }
 }

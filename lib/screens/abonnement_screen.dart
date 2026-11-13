@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../services/auth_service.dart';
+import '../services/remote_content.dart';
 import '../theme/colors.dart';
 import '../l10n/l10n.dart';
 
@@ -20,9 +22,53 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
     super.dispose();
   }
 
+  bool _busy = false;
+
+  /// Active le code saisi sur le serveur (fonction activer_code, réservée aux comptes connectés).
+  Future<void> _activate() async {
+    final code = _code.text.trim();
+    if (code.isEmpty) {
+      setState(() => _msg = "Saisissez votre code d'activation.");
+      return;
+    }
+    final auth = AuthService.instance;
+    final client = auth.client;
+    if (client == null || !auth.signedIn) {
+      setState(() => _msg = "Connectez-vous avec Google (onglet Profil) pour activer un code.");
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _msg = null;
+    });
+    try {
+      await client.rpc('activer_code', params: {'p_code': code});
+      if (!mounted) return;
+      setState(() => _msg = 'Formule activée. Merci !');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _msg = 'Code invalide ou déjà utilisé.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
+    return ListenableBuilder(listenable: RemoteContent.instance, builder: (context, _) => _page(context, t));
+  }
+
+  Widget _plan2(TextTheme t, String key, String name, String fallbackDesc, bool best) {
+    final f = RemoteContent.instance.section('formules');
+    final m = f[key] is Map ? Map<String, dynamic>.from(f[key] as Map) : <String, dynamic>{};
+    final desc = localized(m['desc']);
+    final price = (m['prix'] as String?)?.trim() ?? '';
+    return _plan(t, name, desc.isEmpty ? fallbackDesc : desc, price.isEmpty ? 'Prix bientôt communiqué' : price, best);
+  }
+
+  Widget _page(BuildContext context, TextTheme t) {
+    final pay = localized(RemoteContent.instance.section('formules')['paiement']).trim();
     return Scaffold(
       appBar: AppBar(title: const Tx('Formules')),
       body: ListView(
@@ -32,15 +78,18 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
           const SizedBox(height: 6),
           Tx('Choisissez une formule pour continuer à analyser vos volailles.', style: t.bodyLarge),
           const SizedBox(height: 16),
-          _plan(t, 'Formule mensuelle', 'Analyses illimitées pour une ferme', '[PRIX] FCFA', false),
+          _plan2(t, 'mensuelle', 'Formule mensuelle', 'Analyses illimitées pour une ferme', false),
           const SizedBox(height: 12),
-          _plan(t, 'Formule annuelle', 'Même formule, moins chère par mois', '[PRIX] FCFA', true),
+          _plan2(t, 'annuelle', 'Formule annuelle', 'Même formule, moins chère par mois', true),
           const SizedBox(height: 20),
           Tx('Comment payer', style: t.titleMedium),
           const SizedBox(height: 8),
-          const Tx('1. Envoyez le montant par Mobile Money au numéro indiqué.\n'
-              '2. Notre équipe confirme votre paiement.\n'
-              '3. Vous recevez un code et l\'entrez ci-dessous.'),
+          if (pay.isNotEmpty)
+            Text(pay)
+          else
+            const Tx('1. Envoyez le montant par Mobile Money au numéro indiqué.\n'
+                '2. Notre équipe confirme votre paiement.\n'
+                '3. Vous recevez un code et l\'entrez ci-dessous.'),
           const SizedBox(height: 16),
           TextField(
             controller: _code,
@@ -53,7 +102,7 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
           const SizedBox(height: 16),
           FilledButton(
             style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(54)),
-            onPressed: () => setState(() => _msg = 'Activation disponible quand le serveur sera connecté.'),
+            onPressed: _busy ? null : _activate,
             child: const Tx('Activer ma formule'),
           ),
         ],
