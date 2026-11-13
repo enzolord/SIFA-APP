@@ -18,6 +18,7 @@ export function diseaseForLabel(label) {
 }
 
 let loaded = null;
+const load = async url => { try { return await tflite.loadTFLiteModel(url); } catch (e) { throw new Error(`${e.message} [${url.replace(/^https?:\/\/[^/]+/, '')}]`); } };
 async function currentManifest() {
   try {
     const r = await fetch(`${URL_}/storage/v1/object/public/modeles/manifest.json?t=${Date.now()}`, { cache: 'no-store' });
@@ -33,13 +34,16 @@ export async function loadModel() {
   const m = await currentManifest();
   if (m === undefined && loaded) return loaded;
   const version = m ? m.version : 1;
-  if (loaded && loaded.version === version) return loaded;
-  let url = '/modele/sifa_v1.tflite', labels;
-  if (m) { url = `${URL_}/storage/v1/object/public/modeles/${m.fichier}`; labels = m.labels; }
-  else labels = await (await fetch('/modele/labels_v1.json')).json();
-  const model = await tflite.loadTFLiteModel(url);
+  if (loaded && (loaded.version === version || (loaded.warn && loaded.want === version))) return loaded;
+  const bundled = async () => ({ model: await load('/modele/sifa_v1.tflite'), labels: await (await fetch('/modele/labels_v1.json')).json(), version: 1 });
+  let r, warn = null;
+  if (m) {
+    try { r = { model: await load(`${URL_}/storage/v1/object/public/modeles/${m.fichier}`), labels: m.labels, version: m.version }; }
+    catch (e) { warn = `modèle v${m.version} injoignable (${e.message}), modèle intégré utilisé`; r = await bundled(); }
+  } else r = await bundled();
+  const { model, labels } = r;
   const old = loaded;
-  loaded = { model, labels, outputs: labels.map(diseaseForLabel), version };
+  loaded = { model, labels, outputs: labels.map(diseaseForLabel), version: r.version, warn, want: version };
   try { old?.model?.modelRunner?.cleanUp?.(); } catch { /* ancien modèle déjà libéré */ }
   return loaded;
 }

@@ -63,6 +63,7 @@ Deno.serve(async (req: Request) => {
     generationConfig: {
       temperature: 0,
       maxOutputTokens: 512,
+      thinkingConfig: { thinkingBudget: 0 }, // pas de « réflexion » : réponse bien plus rapide
       responseMimeType: "application/json",
       responseSchema: {
         type: "OBJECT",
@@ -78,15 +79,20 @@ Deno.serve(async (req: Request) => {
   };
 
   try {
-    const r = await fetch(
+    const call = (b: unknown) => fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey },
-        body: JSON.stringify(body),
+        body: JSON.stringify(b),
         signal: AbortSignal.timeout(12_000),
       },
     );
+    let r = await call(body);
+    if (r.status === 400) { // modèle sans option de réflexion : on réessaie sans
+      delete (body.generationConfig as Record<string, unknown>).thinkingConfig;
+      r = await call(body);
+    }
     if (!r.ok) {
       // 429 = quota gratuit dépassé : l'application se rabat sur le modèle embarqué.
       const detail = (await r.text()).slice(0, 300);

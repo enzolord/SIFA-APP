@@ -17,6 +17,12 @@ function toJpeg(source, w, h) {
   c.getContext('2d').drawImage(source, 0, 0, c.width, c.height);
   return new Promise(res => c.toBlob(b => res({ blob: b, canvas: c }), 'image/jpeg', .9));
 }
+function small(canvas) {   // petite copie pour Gemini : 640 px, bien plus rapide à envoyer et à analyser
+  const k = Math.min(1, 640 / Math.max(canvas.width, canvas.height)), c = document.createElement('canvas');
+  c.width = Math.round(canvas.width * k); c.height = Math.round(canvas.height * k);
+  c.getContext('2d').drawImage(canvas, 0, 0, c.width, c.height);
+  return new Promise(res => c.toBlob(res, 'image/jpeg', .75));
+}
 const b64 = blob => new Promise(res => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.readAsDataURL(blob); });
 
 export default function Test() {
@@ -31,7 +37,7 @@ export default function Test() {
   const [modelInfo, setModelInfo] = useState('Chargement du modèle…');
 
   useEffect(() => {
-    const refresh = () => loadModel().then(m => setModelInfo(`Modèle version ${m.version} · ${m.labels.join(', ')}`)).catch(e => setModelInfo('Modèle indisponible : ' + e.message));
+    const refresh = () => loadModel().then(m => setModelInfo(`Modèle version ${m.version} · ${m.labels.join(', ')}${m.warn ? ' · ⚠ ' + m.warn : ''}`)).catch(e => setModelInfo('Modèle indisponible : ' + e.message));
     refresh();
     const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
     window.addEventListener('focus', refresh); document.addEventListener('visibilitychange', onVisible);
@@ -57,7 +63,7 @@ export default function Test() {
       const { blob, canvas } = await toJpeg(source, w, h);
       const url = URL.createObjectURL(blob);
       setPhoto({ url, blob, canvas });
-      const [model, gemini] = await Promise.all([analyze(canvas).catch(e => ({ error: e.message })), b64(blob).then(askGemini)]);
+      const [model, gemini] = await Promise.all([analyze(canvas).catch(e => ({ error: e.message })), small(canvas).then(b64).then(askGemini)]);
       const r = { model, gemini, at: Date.now(), url };
       if (model.version) setModelInfo(i => i.replace(/version \d+/, 'version ' + model.version));
       setRes(r); setHistory(h => [r, ...h].slice(0, 8));
