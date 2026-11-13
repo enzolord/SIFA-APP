@@ -21,8 +21,8 @@ jamais la clé secrète ni la clé Gemini).
 ## Onglet « Test caméra »
 
 Fonctionne en https (donc sur Vercel, ou en local sur `localhost`). Le modèle tourne dans le navigateur : celui publié dans
-Supabase s'il existe, sinon le modèle livré avec l'application (`public/modele/`). Après avoir publié un nouveau modèle,
-rechargez la page. Le bouton « Ajouter à la galerie » envoie la photo dans le bucket `echantillons`, prête à être étiquetée.
+Supabase s'il existe, sinon le modèle livré avec l'application (`public/modele/`). Un nouveau modèle publié est pris en compte
+automatiquement (vérification au retour sur l'onglet, toutes les minutes et avant chaque analyse). Le bouton « Ajouter à la galerie » envoie la photo dans le bucket `echantillons`, prête à être étiquetée.
 
 ## Installer comme une application (PWA)
 

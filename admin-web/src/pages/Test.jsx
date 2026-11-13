@@ -30,7 +30,14 @@ export default function Test() {
   const [history, setHistory] = useState([]);
   const [modelInfo, setModelInfo] = useState('Chargement du modèle…');
 
-  useEffect(() => { loadModel().then(m => setModelInfo(`Modèle version ${m.version} · ${m.labels.join(', ')}`)).catch(e => setModelInfo('Modèle indisponible : ' + e.message)); }, []);
+  useEffect(() => {
+    const refresh = () => loadModel().then(m => setModelInfo(`Modèle version ${m.version} · ${m.labels.join(', ')}`)).catch(e => setModelInfo('Modèle indisponible : ' + e.message));
+    refresh();
+    const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
+    window.addEventListener('focus', refresh); document.addEventListener('visibilitychange', onVisible);
+    const timer = setInterval(refresh, 60000);   // vérifie toutes les minutes qu'aucun nouveau modèle n'a été publié
+    return () => { window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', onVisible); clearInterval(timer); };
+  }, []);
   const stop = useCallback(() => { stream.current?.getTracks().forEach(t => t.stop()); stream.current = null; setCam(c => ({ ...c, on: false })); }, []);
   useEffect(() => stop, [stop]);
 
@@ -52,6 +59,7 @@ export default function Test() {
       setPhoto({ url, blob, canvas });
       const [model, gemini] = await Promise.all([analyze(canvas).catch(e => ({ error: e.message })), b64(blob).then(askGemini)]);
       const r = { model, gemini, at: Date.now(), url };
+      if (model.version) setModelInfo(i => i.replace(/version \d+/, 'version ' + model.version));
       setRes(r); setHistory(h => [r, ...h].slice(0, 8));
     } catch (e) { toast('Analyse impossible : ' + e.message, true); }
     setBusy(false);

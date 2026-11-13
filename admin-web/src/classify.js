@@ -18,23 +18,31 @@ export function diseaseForLabel(label) {
 }
 
 let loaded = null;
-/** Modèle publié dans Supabase s'il existe (version > 1), sinon celui livré avec l'application (version 1). */
-export async function loadModel() {
-  if (loaded) return loaded;
-  let url = '/modele/sifa_v1.tflite', labels = null, version = 1;
+async function currentManifest() {
   try {
     const r = await fetch(`${URL_}/storage/v1/object/public/modeles/manifest.json?t=${Date.now()}`, { cache: 'no-store' });
-    if (r.ok) {
-      const m = await r.json();
-      if (m.version > 1 && Array.isArray(m.labels) && m.fichier) { url = `${URL_}/storage/v1/object/public/modeles/${m.fichier}`; labels = m.labels; version = m.version; }
-    }
-  } catch { /* hors ligne ou aucun modèle publié : on garde le modèle intégré */ }
-  if (!labels) labels = await (await fetch('/modele/labels_v1.json')).json();
+    if (r.ok) { const m = await r.json(); if (m.version > 1 && Array.isArray(m.labels) && m.fichier) return m; }
+    if (r.ok || r.status === 404 || r.status === 400) return null;   // aucun modèle publié : modèle intégré
+  } catch { /* hors ligne */ }
+  return undefined;                                                  // inconnu : on garde ce qui est chargé
+}
+
+/** Modèle publié dans Supabase s'il existe (version > 1), sinon celui livré avec l'application (version 1).
+ *  La version publiée est revérifiée à chaque appel : un nouveau modèle est pris en compte sans recharger la page. */
+export async function loadModel() {
+  const m = await currentManifest();
+  if (m === undefined && loaded) return loaded;
+  const version = m ? m.version : 1;
+  if (loaded && loaded.version === version) return loaded;
+  let url = '/modele/sifa_v1.tflite', labels;
+  if (m) { url = `${URL_}/storage/v1/object/public/modeles/${m.fichier}`; labels = m.labels; }
+  else labels = await (await fetch('/modele/labels_v1.json')).json();
   const model = await tflite.loadTFLiteModel(url);
+  const old = loaded;
   loaded = { model, labels, outputs: labels.map(diseaseForLabel), version };
+  try { old?.model?.modelRunner?.cleanUp?.(); } catch { /* ancien modèle déjà libéré */ }
   return loaded;
 }
-export function forgetModel() { loaded = null; }
 
 function checkQuality(rgba) {
   const n = rgba.length / 4; let s = 0, s2 = 0;
