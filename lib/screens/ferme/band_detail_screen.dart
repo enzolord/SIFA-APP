@@ -44,6 +44,13 @@ class BandDetailScreen extends StatelessWidget {
                     subColor: s.mortalityPct(band) > 2 ? SifaColors.danger : SifaColors.ok,
                   ),
                   KpiCard(label: 'Aliment consommé', value: '${s.feedTotal(band).round()} kg'),
+                  if (band.type == FlockType.layer) ...[
+                    KpiCard(label: 'Taux de ponte (7 jours)', value: s.layingRate(band) == null ? '—' : '${s.layingRate(band)!.round()} %', sub: trf('{0} œufs aujourd\'hui', [s.eggsToday(band)])),
+                    KpiCard(label: 'Aliment par poule', value: s.feedPerBirdG(band) == null ? '—' : '${s.feedPerBirdG(band)!.round()} g', sub: 'par jour'),
+                  ] else ...[
+                    KpiCard(label: 'Indice de consommation', value: s.feedConversion(band) == null ? '—' : s.feedConversion(band)!.toStringAsFixed(2), sub: 'aliment / poids vif, plus bas = mieux'),
+                    KpiCard(label: 'Aliment par poulet', value: s.feedPerBirdG(band) == null ? '—' : '${s.feedPerBirdG(band)!.round()} g', sub: 'par jour'),
+                  ],
                 ],
               ),
               const SizedBox(height: 16),

@@ -195,6 +195,24 @@ begin
       'codes_utilises',(select count(*) from codes_activation where utilise_par is not null),
       'codes_periode',(select count(*) from codes_activation where utilise_le >= dep)
     ),
+    'quota', jsonb_build_object(
+      'bloques_periode',  (select count(distinct appareil) from ev where nom = 'quota_atteint'),
+      'bloques_total',    (select count(distinct appareil) from evenements where nom = 'quota_atteint'),
+      'blocages',         (select count(*) from ev where nom = 'quota_atteint'),
+      'par_offre',        coalesce((select jsonb_object_agg(offre, n) from
+                            (select coalesce(props->>'offre', 'inconnu') as offre, count(distinct appareil) n from ev where nom = 'quota_atteint' group by 1) x), '{}'::jsonb),
+      'ferme_verrouillee',(select count(distinct appareil) from ev where nom = 'action' and props->>'nom' = 'ferme:verrouille')
+    ),
+    'ferme', jsonb_build_object(
+      'utilisateurs', (select count(distinct appareil) from ev where nom = 'ecran' and props->>'nom' in
+                        ('BandsScreen','BandDetailScreen','EntryScreen','PerformanceScreen','HealthScreen','StocksScreen','FinancesScreen','ClientsScreen','ProfitScreen','ReportScreen','TasksScreen')),
+      'modules',      coalesce((select jsonb_agg(jsonb_build_object('nom', nom, 'vues', vues, 'appareils', appareils) order by vues desc) from
+                        (select props->>'nom' as nom, count(*) vues, count(distinct appareil) appareils from ev
+                          where nom = 'ecran' and props->>'nom' in ('BandsScreen','BandDetailScreen','EntryScreen','PerformanceScreen','HealthScreen','StocksScreen','FinancesScreen','ClientsScreen','ProfitScreen','ReportScreen','TasksScreen')
+                          group by 1) x), '[]'::jsonb),
+      'actions',      coalesce((select jsonb_object_agg(nom, n) from
+                        (select props->>'nom' as nom, count(*) n from ev where nom = 'action' and props->>'nom' like 'ferme:%' group by 1) x), '{}'::jsonb)
+    ),
     'pharmacies', jsonb_build_object(
       'actives',   (select count(*) from pharmacies where actif),
       'par_stock', coalesce((select jsonb_object_agg(coalesce(stock, 'inconnu'), n) from (select stock, count(*) n from pharmacies where actif group by 1) x), '{}'::jsonb),
@@ -301,6 +319,16 @@ begin
   return c.formule;
 end $$;
 grant execute on function public.activer_code(text) to authenticated;
+
+-- L'application lit son propre abonnement actif (offre, début, fin) pour appliquer les quotas.
+create or replace function public.mon_abonnement()
+returns table (formule text, debut timestamptz, fin timestamptz) language sql security definer set search_path = public as $$
+  select a.formule, a.debut, a.fin from public.abonnements a
+   where a.user_id = auth.uid() and a.statut = 'actif' and (a.fin is null or a.fin > now())
+   order by a.debut desc limit 1;
+$$;
+revoke all on function public.mon_abonnement() from public, anon;
+grant execute on function public.mon_abonnement() to authenticated;
 
 -- 7. Contenu de départ (ne remplace rien d'existant)
 insert into public.contenu (cle, valeur) values

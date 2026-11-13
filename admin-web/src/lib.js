@@ -36,10 +36,11 @@ export const L = {
     Accueil: 'Accueil', Historique: 'Historique', Scanner: 'Scanner', Communaute: 'Communauté', Profil: 'Profil',
     SignsScreen: 'Questions sur les signes', ResultScreen: 'Résultat', RemedesScreen: 'Remèdes et conseils', AbonnementScreen: 'Formules',
     NewPostScreen: 'Nouvelle publication', PostDetailScreen: 'Détail d’une publication', GroupDetailScreen: 'Groupe de discussion',
-    BandsScreen: 'Mes bandes', BandDetailScreen: 'Détail d’une bande', EntryScreen: 'Saisie journalière',
+    BandsScreen: 'Mes bandes', StocksScreen: 'Stocks', FinancesScreen: 'Finances', TasksScreen: 'Tâches', PerformanceScreen: 'Performances', HealthScreen: 'Santé et traitements', ClientsScreen: 'Clients', ProfitScreen: 'Rentabilité par bande', ReportScreen: 'Rapport de bande', BandDetailScreen: 'Détail d’une bande', EntryScreen: 'Saisie journalière',
   },
   action: {
     appel_pharmacie: 'Appel d’une pharmacie', itineraire_maps: 'Itinéraire (Google Maps)', itineraire_carte: 'Itinéraire sur la carte',
+    'ferme:sante_ajout': 'Ferme : soin ajouté', 'ferme:vente': 'Ferme : vente saisie', 'ferme:depense': 'Ferme : dépense saisie', 'ferme:client_ajout': 'Ferme : client ajouté', 'ferme:rapport_copie': 'Ferme : rapport copié', 'ferme:verrouille': 'Ferme : accès verrouillé (formule)',
     connexion_google: 'Connexion Google', code_active: 'Code d’activation utilisé', photo_partagee: 'Photo partagée pour améliorer SIFA',
   },
 };

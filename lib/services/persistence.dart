@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../l10n/l10n.dart';
 import 'analysis_store.dart';
 import 'community_store.dart';
+import 'entitlement.dart';
 import 'farm_store.dart';
 import 'session.dart';
 
@@ -39,6 +40,9 @@ class Persistence {
         if (data['farm'] != null) {
           FarmStore.instance.restore(Map<String, dynamic>.from(data['farm'] as Map));
         }
+        if (data['quota'] != null) {
+          Entitlement.instance.restore(Map<String, dynamic>.from(data['quota'] as Map));
+        }
         if (data['community'] != null) {
           CommunityStore.instance.restore(Map<String, dynamic>.from(data['community'] as Map));
         }
@@ -49,7 +53,7 @@ class Persistence {
     }
 
     AnalysisStore.instance.photoSaver = _savePhoto;
-    for (final l in [Session.instance, FarmStore.instance, AnalysisStore.instance, CommunityStore.instance, L10n.instance]) {
+    for (final l in [Session.instance, FarmStore.instance, AnalysisStore.instance, CommunityStore.instance, Entitlement.instance, L10n.instance]) {
       l.addListener(_schedule);
     }
     _ready = true;
@@ -69,6 +73,7 @@ class Persistence {
       'session': Session.instance.toJson(),
       'farm': FarmStore.instance.toJson(),
       'analyses': AnalysisStore.instance.toJson(),
+      'quota': Entitlement.instance.toJson(),
       'community': CommunityStore.instance.toJson(),
     });
     await tmp.writeAsString(json, flush: true);

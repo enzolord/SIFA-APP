@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/diagnosis.dart';
 import 'analytics.dart';
+import 'entitlement.dart';
 import 'sample_uploader.dart';
 import 'classifier.dart';
 import 'triage.dart';
@@ -41,6 +42,7 @@ class AnalysisStore extends ChangeNotifier {
     _items.add(d);
     notifyListeners();
     _track(d);
+    Entitlement.instance.recordAnalysis();
     SampleUploader.instance.onAnalysis(d);
     final saver = photoSaver;
     if (saver != null && d.photoPath == null) {

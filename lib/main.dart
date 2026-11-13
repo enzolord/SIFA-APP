@@ -8,6 +8,7 @@ import 'services/analysis_store.dart';
 import 'services/analytics.dart';
 import 'services/auth_service.dart';
 import 'services/classifier.dart';
+import 'services/entitlement.dart';
 import 'services/model_store.dart';
 import 'services/persistence.dart';
 import 'services/remote_content.dart';
@@ -25,6 +26,8 @@ Future<void> main() async {
   ModelStore.instance.checkForUpdate();
   // Contenu modifiable à distance (annonces, pharmacies, formules, fiches) : cache puis mise à jour en direct.
   RemoteContent.instance.start();
+  Entitlement.instance.start();
+  Entitlement.instance.refresh();
   // Mesure d'usage anonyme (désactivable dans Profil).
   Analytics.instance.start().then((_) => SampleUploader.instance.init());
   runApp(const SifaApp());

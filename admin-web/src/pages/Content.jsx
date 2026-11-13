@@ -99,6 +99,11 @@ function TarifsForm({ init, toast }) {
         <div><label className="f">+ 1 compte (FCFA / mois)</label><input type="text" inputMode="numeric" value={T.compte_supplementaire} onChange={e => setT({ ...T, compte_supplementaire: parseInt(e.target.value, 10) || 0 })} /></div>
         <div><label className="f">+ 20 analyses (FCFA)</label><input type="text" inputMode="numeric" value={T.analyses_supplementaires} onChange={e => setT({ ...T, analyses_supplementaires: parseInt(e.target.value, 10) || 0 })} /></div>
       </div>
+      <div style={{ marginTop: 10 }}>
+        <label className="f">Analyses gratuites (à vie, sans formule d’analyse)</label>
+        <input type="text" inputMode="numeric" style={{ width: 100 }} value={T.analyses_gratuites ?? 5} onChange={e => setT({ ...T, analyses_gratuites: Math.min(1000, parseInt(e.target.value, 10) || 0) })} />
+        <div className="muted" style={{ marginTop: 4 }}>Une fois ce nombre atteint, le scanner est bloqué et propose les formules.</div>
+      </div>
     </Card>
     <Card title="Formule 2 : gestion de ferme" sub="Par nombre de sujets, prix par mois. Inclus : achat des poussins, aliment, santé, dépenses, ventes, stocks, clients, rentabilité par bande, rapports QR ; 2 comptes.">
       <div className="tablewrap"><table><thead><tr><th>Palier</th><th>Sujets</th><th>Prix / mois</th></tr></thead>

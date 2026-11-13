@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../services/analytics.dart';
 import '../../services/farm_store.dart';
 import '../../theme/colors.dart';
 import '../../widgets/form_dialog.dart';
@@ -16,17 +17,41 @@ class FinancesScreen extends StatelessWidget {
       fields: [
         FieldSpec(sale ? 'Description' : 'Description', hint: sale ? 'Vente de 200 poulets' : 'Sacs de maïs'),
         const FieldSpec('Montant (FCFA)', number: true, hint: '150000'),
-        if (!sale) const FieldSpec('Catégorie', hint: 'Aliment, Poussins, Santé, Autres'),
+        if (sale) const FieldSpec('Client', hint: 'Facultatif') else const FieldSpec('Catégorie', hint: 'Aliment, Poussins, Santé, Autres'),
       ],
     );
-    if (v == null || toNum(v[1]) <= 0) return;
+    if (v == null || toNum(v[1]) <= 0 || !context.mounted) return;
+    final band = await _pickBand(context);
+    if (!context.mounted) return;
+    final client = sale && v[2].isNotEmpty ? v[2] : null;
+    if (client != null) FarmStore.instance.addClient(Client(name: client));
     FarmStore.instance.addTxn(Txn(
+      bandId: band?.id,
+      client: client,
       date: DateTime.now(),
       label: v[0].isEmpty ? (sale ? 'Vente' : 'Dépense') : v[0],
       amount: toNum(v[1]),
       isSale: sale,
       category: sale ? 'Vente' : (v[2].isEmpty ? 'Autres' : v[2]),
     ));
+    Analytics.instance.action(sale ? 'ferme:vente' : 'ferme:depense');
+  }
+
+  /// Choix de la bande concernée ; null = non rattaché à une bande.
+  Future<Band?> _pickBand(BuildContext context) async {
+    final bands = FarmStore.instance.bands;
+    if (bands.isEmpty) return null;
+    if (bands.length == 1) return bands.first;
+    return showDialog<Band>(
+      context: context,
+      builder: (_) => SimpleDialog(
+        title: const Tx('Pour quelle bande ?'),
+        children: [
+          for (final b in bands) SimpleDialogOption(onPressed: () => Navigator.pop(context, b), child: Tx(b.name)),
+          SimpleDialogOption(onPressed: () => Navigator.pop(context), child: const Tx('Aucune bande en particulier')),
+        ],
+      ),
+    );
   }
 
   @override

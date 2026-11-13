@@ -180,3 +180,8 @@ TEMPLATES = {
 from translations_en_sante import EN_SANTE, TEMPLATES_SANTE
 EN.update(EN_SANTE)
 TEMPLATES.update(TEMPLATES_SANTE)
+
+# Quotas, gestion de ferme (ponte, santé, performances)
+from translations_en_ferme import EN_FERME, TEMPLATES_FERME
+EN.update(EN_FERME)
+TEMPLATES.update(TEMPLATES_FERME)

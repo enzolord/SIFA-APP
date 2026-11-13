@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/pricing.dart';
 import '../services/analytics.dart';
 import '../services/auth_service.dart';
+import '../services/entitlement.dart';
 import '../services/remote_content.dart';
 import '../theme/colors.dart';
 import '../l10n/l10n.dart';
@@ -50,6 +51,7 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
     try {
       await client.rpc('activer_code', params: {'p_code': code});
       Analytics.instance.action('code_active');
+      await Entitlement.instance.refresh();
       if (!mounted) return;
       setState(() => _msg = 'Formule activée. Merci !');
     } catch (e) {
@@ -62,7 +64,7 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(listenable: RemoteContent.instance, builder: (context, _) => _page(context, Theme.of(context).textTheme));
+    return ListenableBuilder(listenable: Listenable.merge([RemoteContent.instance, Entitlement.instance]), builder: (context, _) => _page(context, Theme.of(context).textTheme));
   }
 
   Pricing get _pricing => Pricing.fromRemote(RemoteContent.instance.section('tarifs'));
@@ -77,6 +79,34 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
       _choice = id;
       _msg = null;
     });
+  }
+
+  Widget _currentPlan(TextTheme t, Pricing p) {
+    final e = Entitlement.instance;
+    final id = e.offerId;
+    final name = id == null ? null : (id == 'mensuelle' || id == 'annuelle' ? tr('Ancienne formule') : p.lookup(id)?.$1);
+    final lim = e.limit;
+    final line = lim == null
+        ? tr('Analyses illimitées')
+        : (e.isFree
+            ? trf('Analyses gratuites utilisées : {0} sur {1}', [e.used, lim])
+            : trf('Analyses utilisées ce mois : {0} sur {1}', [e.used, lim]));
+    final until = e.until;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      color: SifaColors.brand.withValues(alpha: .08),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Tx('Votre formule actuelle', style: t.bodySmall),
+          const SizedBox(height: 2),
+          Text(name ?? tr('Essai gratuit'), style: t.titleMedium),
+          const SizedBox(height: 4),
+          Text(line, style: t.bodyMedium),
+          if (until != null) Text(trf('Valable jusqu\'au {0}', ['${until.day.toString().padLeft(2, '0')}/${until.month.toString().padLeft(2, '0')}/${until.year}']), style: t.bodySmall),
+        ]),
+      ),
+    );
   }
 
   Widget _offer(TextTheme t, {required String id, required String name, required String line, required String price, String? sub, bool enabled = true, bool onQuote = false}) {
@@ -239,6 +269,7 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          _currentPlan(t, p),
           Tx('Choisissez votre formule', style: t.headlineSmall),
           const SizedBox(height: 6),
           Tx('Analyse des fientes, gestion de ferme, ou les deux avec une réduction.', style: t.bodyLarge),

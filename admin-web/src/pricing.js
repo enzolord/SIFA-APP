@@ -11,7 +11,7 @@ export const TIERS = [
   { n: 4, min: 3501, max: 6500, price: 11000 }, { n: 5, min: 6501, max: 10500, price: 15000 }, { n: 6, min: 10501, max: 20500, price: 22000 },
   { n: 7, min: 20501, max: null, price: null },
 ];
-export const DEFAULT_TARIFS = { prix: {}, reduction_pack: 15, compte_supplementaire: 500, analyses_supplementaires: 1000, gestion_disponible: false };
+export const DEFAULT_TARIFS = { prix: {}, reduction_pack: 15, compte_supplementaire: 500, analyses_supplementaires: 1000, analyses_gratuites: 5, gestion_disponible: false };
 
 const ok = v => typeof v === 'number' && v > 0;
 export function catalogue(tarifs = {}) {

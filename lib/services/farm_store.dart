@@ -30,13 +30,17 @@ class Band {
 }
 
 class DailyEntry {
-  DailyEntry({required this.bandId, required this.date, this.dead = 0, this.feedKg = 0, this.waterL = 0, this.avgWeightG});
+  DailyEntry({required this.bandId, required this.date, this.dead = 0, this.feedKg = 0, this.waterL = 0, this.avgWeightG, this.eggs, this.cracked});
   final int bandId;
   final DateTime date;
   final int dead;
   final double feedKg;
   final double waterL;
   final double? avgWeightG;
+
+  /// Pondeuses : œufs ramassés ce jour-là, dont cassés ou déclassés.
+  final int? eggs;
+  final int? cracked;
 
   Map<String, dynamic> toJson() => {
         'bandId': bandId,
@@ -45,6 +49,8 @@ class DailyEntry {
         'feedKg': feedKg,
         'waterL': waterL,
         'avgWeightG': avgWeightG,
+        'eggs': eggs,
+        'cracked': cracked,
       };
 
   factory DailyEntry.fromJson(Map<String, dynamic> j) => DailyEntry(
@@ -54,6 +60,8 @@ class DailyEntry {
         feedKg: (j['feedKg'] as num).toDouble(),
         waterL: (j['waterL'] as num).toDouble(),
         avgWeightG: (j['avgWeightG'] as num?)?.toDouble(),
+        eggs: (j['eggs'] as num?)?.round(),
+        cracked: (j['cracked'] as num?)?.round(),
       );
 }
 
@@ -78,12 +86,16 @@ class StockItem {
 }
 
 class Txn {
-  Txn({required this.date, required this.label, required this.amount, required this.isSale, required this.category});
+  Txn({required this.date, required this.label, required this.amount, required this.isSale, required this.category, this.bandId, this.client});
   final DateTime date;
   final String label;
   final double amount;
   final bool isSale;
   final String category;
+
+  /// Bande concernée (pour la rentabilité par bande) et client acheteur, s'ils sont connus.
+  final int? bandId;
+  final String? client;
 
   Map<String, dynamic> toJson() => {
         'date': date.toIso8601String(),
@@ -91,6 +103,8 @@ class Txn {
         'amount': amount,
         'isSale': isSale,
         'category': category,
+        'bandId': bandId,
+        'client': client,
       };
 
   factory Txn.fromJson(Map<String, dynamic> j) => Txn(
@@ -99,6 +113,8 @@ class Txn {
         amount: (j['amount'] as num).toDouble(),
         isSale: j['isSale'] as bool,
         category: j['category'] as String,
+        bandId: j['bandId'] as int?,
+        client: j['client'] as String?,
       );
 }
 
@@ -117,6 +133,50 @@ class FarmTask {
       );
 }
 
+class Client {
+  Client({required this.name, this.phone = ''});
+  final String name;
+  final String phone;
+
+  Map<String, dynamic> toJson() => {'name': name, 'phone': phone};
+  factory Client.fromJson(Map<String, dynamic> j) => Client(name: j['name'] as String, phone: j['phone'] as String? ?? '');
+}
+
+enum HealthKind { vaccine, treatment, other }
+
+/// Vaccin, traitement ou autre soin donné à une bande, avec son délai d'attente
+/// (jours pendant lesquels on ne vend ni œufs ni poulets après un médicament).
+class HealthEvent {
+  HealthEvent({required this.bandId, required this.date, required this.kind, required this.product, this.note = '', this.withdrawalDays = 0});
+  final int bandId;
+  final DateTime date;
+  final HealthKind kind;
+  final String product;
+  final String note;
+  final int withdrawalDays;
+
+  DateTime get withdrawalEnd => DateTime(date.year, date.month, date.day).add(Duration(days: withdrawalDays));
+  bool get inWithdrawal => withdrawalDays > 0 && withdrawalEnd.isAfter(DateTime.now());
+
+  Map<String, dynamic> toJson() => {
+        'bandId': bandId,
+        'date': date.toIso8601String(),
+        'kind': kind.index,
+        'product': product,
+        'note': note,
+        'withdrawalDays': withdrawalDays,
+      };
+
+  factory HealthEvent.fromJson(Map<String, dynamic> j) => HealthEvent(
+        bandId: j['bandId'] as int,
+        date: DateTime.parse(j['date'] as String),
+        kind: HealthKind.values[(j['kind'] as int? ?? 2).clamp(0, HealthKind.values.length - 1)],
+        product: j['product'] as String? ?? '',
+        note: j['note'] as String? ?? '',
+        withdrawalDays: j['withdrawalDays'] as int? ?? 0,
+      );
+}
+
 bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
 /// Gestion de ferme en mémoire (sera remplacée par SQLite local + Supabase).
@@ -129,6 +189,8 @@ class FarmStore extends ChangeNotifier {
   final List<StockItem> stock = [];
   final List<Txn> txns = [];
   final List<FarmTask> tasks = [];
+  final List<HealthEvent> health = [];
+  final List<Client> clients = [];
   int _nextId = 1;
 
   Map<String, dynamic> toJson() => {
@@ -137,6 +199,8 @@ class FarmStore extends ChangeNotifier {
         'stock': [for (final x in stock) x.toJson()],
         'txns': [for (final x in txns) x.toJson()],
         'tasks': [for (final x in tasks) x.toJson()],
+        'health': [for (final x in health) x.toJson()],
+        'clients': [for (final x in clients) x.toJson()],
       };
 
   List<T> _list<T>(Object? raw, T Function(Map<String, dynamic>) f) =>
@@ -148,12 +212,31 @@ class FarmStore extends ChangeNotifier {
     stock..clear()..addAll(_list(j['stock'], StockItem.fromJson));
     txns..clear()..addAll(_list(j['txns'], Txn.fromJson));
     tasks..clear()..addAll(_list(j['tasks'], FarmTask.fromJson));
+    health..clear()..addAll(_list(j['health'], HealthEvent.fromJson));
+    clients..clear()..addAll(_list(j['clients'], Client.fromJson));
     _nextId = bands.fold(0, (m, b) => b.id > m ? b.id : m) + 1;
     notifyListeners();
   }
 
-  void addBand(String name, FlockType type, int count, {DateTime? arrival}) {
-    bands.add(Band(id: _nextId++, name: name, type: type, initialCount: count, arrival: arrival ?? DateTime.now()));
+  /// Crée une bande. Si [chickCost] est donné, le prix d'achat des poussins est noté en dépense de cette bande.
+  Band addBand(String name, FlockType type, int count, {DateTime? arrival, double chickCost = 0}) {
+    final b = Band(id: _nextId++, name: name, type: type, initialCount: count, arrival: arrival ?? DateTime.now());
+    bands.add(b);
+    if (chickCost > 0) {
+      txns.add(Txn(date: b.arrival, label: 'Achat des poussins', amount: chickCost, isSale: false, category: 'Poussins', bandId: b.id));
+    }
+    notifyListeners();
+    return b;
+  }
+
+  void addClient(Client c) {
+    if (clients.any((x) => x.name.toLowerCase() == c.name.toLowerCase())) return;
+    clients.add(c);
+    notifyListeners();
+  }
+
+  void removeClient(Client c) {
+    clients.remove(c);
     notifyListeners();
   }
 
@@ -174,6 +257,16 @@ class FarmStore extends ChangeNotifier {
 
   void addTxn(Txn t) {
     txns.add(t);
+    notifyListeners();
+  }
+
+  void addHealth(HealthEvent e) {
+    health.add(e);
+    notifyListeners();
+  }
+
+  void removeHealth(HealthEvent e) {
+    health.remove(e);
     notifyListeners();
   }
 
@@ -200,6 +293,56 @@ class FarmStore extends ChangeNotifier {
       ..sort((a, c) => a.date.compareTo(c.date));
     return w.isEmpty ? null : w.last.avgWeightG;
   }
+
+  /// Taux de ponte des [days] derniers jours : œufs ramassés / (poules vivantes x jours saisis). Null sans saisie d'œufs.
+  double? layingRate(Band b, {int days = 7}) {
+    final since = DateTime.now().subtract(Duration(days: days));
+    final es = entriesOf(b).where((e) => e.eggs != null && e.date.isAfter(since)).toList();
+    final hens = alive(b);
+    if (es.isEmpty || hens <= 0) return null;
+    final eggs = es.fold(0, (s, e) => s + e.eggs!);
+    return eggs * 100 / (hens * es.length);
+  }
+
+  int eggsToday(Band b) => entriesOf(b).where((e) => _sameDay(e.date, DateTime.now())).fold(0, (s, e) => s + (e.eggs ?? 0));
+
+  /// Indice de consommation approximatif : aliment distribué / poids vif des poulets vivants (dernière pesée).
+  /// Plus il est bas, mieux c'est. Null sans pesée ni aliment saisis.
+  double? feedConversion(Band b) {
+    final w = lastWeight(b);
+    final kg = feedTotal(b);
+    final n = alive(b);
+    if (w == null || w <= 0 || kg <= 0 || n <= 0) return null;
+    return kg / (n * w / 1000);
+  }
+
+  /// Aliment par poulet et par jour, en grammes, sur les jours saisis.
+  double? feedPerBirdG(Band b) {
+    final es = entriesOf(b).where((e) => e.feedKg > 0).toList();
+    final n = alive(b);
+    if (es.isEmpty || n <= 0) return null;
+    return es.fold(0.0, (s, e) => s + e.feedKg) * 1000 / (n * es.length);
+  }
+
+  Iterable<HealthEvent> get activeWithdrawals => health.where((h) => h.inWithdrawal);
+  List<HealthEvent> healthOf(Band b) => health.where((h) => h.bandId == b.id).toList()..sort((a, c) => c.date.compareTo(a.date));
+
+  // --- Rentabilité par bande ---
+  Iterable<Txn> txnsOf(Band b) => txns.where((t) => t.bandId == b.id);
+  double salesOf(Band b) => txnsOf(b).where((t) => t.isSale).fold(0.0, (s, t) => s + t.amount);
+  double expensesOf(Band b) => txnsOf(b).where((t) => !t.isSale).fold(0.0, (s, t) => s + t.amount);
+  double profitOf(Band b) => salesOf(b) - expensesOf(b);
+
+  /// Marge par oiseau encore vivant. Null s'il n'en reste aucun.
+  double? profitPerBird(Band b) => alive(b) > 0 ? profitOf(b) / alive(b) : null;
+
+  /// Ventes et dépenses non rattachées à une bande.
+  double get unassignedSales => txns.where((t) => t.bandId == null && t.isSale).fold(0.0, (s, t) => s + t.amount);
+  double get unassignedExpenses => txns.where((t) => t.bandId == null && !t.isSale).fold(0.0, (s, t) => s + t.amount);
+
+  // --- Clients ---
+  Iterable<Txn> salesTo(String name) => txns.where((t) => t.isSale && (t.client ?? '').toLowerCase() == name.toLowerCase());
+  double totalBoughtBy(String name) => salesTo(name).fold(0.0, (s, t) => s + t.amount);
 
   int get totalAlive => bands.fold(0, (s, b) => s + alive(b));
   int get totalPlaced => bands.fold(0, (s, b) => s + b.initialCount);

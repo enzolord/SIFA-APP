@@ -5,6 +5,9 @@ import '../services/analysis_store.dart';
 import '../services/analytics.dart';
 import '../services/classifier.dart';
 import '../services/dropping_check.dart';
+import '../services/entitlement.dart';
+import '../services/remote_content.dart';
+import 'abonnement_screen.dart';
 import '../theme/colors.dart';
 import 'signs_screen.dart';
 import '../l10n/l10n.dart';
@@ -22,6 +25,7 @@ class _ScanScreenState extends State<ScanScreen> {
   String? _message;
 
   Future<void> _go(ImageSource source) async {
+    if (!Entitlement.instance.canAnalyze) return;
     setState(() {
       _busy = true;
       _message = null;
@@ -71,9 +75,57 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
+  bool _quotaLogged = false;
+
+  Widget _blocked(TextTheme t) {
+    final e = Entitlement.instance;
+    if (!_quotaLogged) {
+      _quotaLogged = true;
+      Analytics.instance.track('quota_atteint', {'offre': e.offerId ?? 'gratuit', 'limite': e.limit});
+    }
+    return Container(
+      color: SifaColors.ink,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(28),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.lock_outline_rounded, size: 56, color: SifaColors.yolk),
+        const SizedBox(height: 18),
+        Tx(e.isFree ? 'Vos analyses gratuites sont terminées' : 'Vous avez utilisé toutes les analyses de votre formule',
+            textAlign: TextAlign.center, style: t.titleLarge?.copyWith(color: Colors.white)),
+        const SizedBox(height: 10),
+        Text(
+          e.isFree
+              ? trf('Vous avez fait vos {0} analyses offertes. Choisissez une formule pour continuer à analyser les fientes de vos poulets.', [e.limit ?? 0])
+              : tr('Votre quota se renouvelle tous les 30 jours. Vous pouvez aussi passer à une formule plus grande.'),
+          textAlign: TextAlign.center,
+          style: t.bodyMedium?.copyWith(color: Colors.white70),
+        ),
+        const SizedBox(height: 24),
+        FilledButton.icon(
+          style: FilledButton.styleFrom(backgroundColor: SifaColors.yolk, foregroundColor: SifaColors.onYolk, minimumSize: const Size(220, 52)),
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(settings: const RouteSettings(name: 'AbonnementScreen'), builder: (_) => const AbonnementScreen())),
+          icon: const Icon(Icons.workspace_premium_rounded),
+          label: const Tx('Voir les formules'),
+        ),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
+    return ListenableBuilder(
+      listenable: Listenable.merge([Entitlement.instance, RemoteContent.instance]),
+      builder: (context, _) {
+        final t = Theme.of(context).textTheme;
+        if (!Entitlement.instance.canAnalyze) return _blocked(t);
+        _quotaLogged = false;
+        return _scanner(context, t);
+      },
+    );
+  }
+
+  Widget _scanner(BuildContext context, TextTheme t) {
+    final e = Entitlement.instance;
     return Container(
       color: SifaColors.ink,
       alignment: Alignment.center,
@@ -89,6 +141,15 @@ class _ScanScreenState extends State<ScanScreen> {
         const SizedBox(height: 4),
         Tx('Une seule fiente fraîche, qui remplit le cadre',
             style: t.bodyMedium?.copyWith(color: Colors.white70)),
+        if (e.remaining != null && e.remaining! <= (e.isFree ? 5 : 10)) ...[
+          const SizedBox(height: 10),
+          Text(
+            e.isFree
+                ? trf('Analyses gratuites restantes : {0} sur {1}', [e.remaining!, e.limit!])
+                : trf('Analyses restantes ce mois : {0} sur {1}', [e.remaining!, e.limit!]),
+            style: t.bodyMedium?.copyWith(color: SifaColors.yolk, fontWeight: FontWeight.w600),
+          ),
+        ],
         if (_message != null) ...[
           const SizedBox(height: 12),
           Tx(_message!, textAlign: TextAlign.center, style: t.bodyMedium?.copyWith(color: SifaColors.yolk)),

@@ -53,6 +53,7 @@ class Pricing {
     this.packDiscount = 15,
     this.farmAccounts = 2,
     this.farmManagementAvailable = false,
+    this.freeAnalyses = 5,
   });
 
   final List<AnalysisPack> packs;
@@ -73,6 +74,9 @@ class Pricing {
 
   /// La gestion de ferme n'est proposée à l'achat que lorsque l'administration l'active.
   final bool farmManagementAvailable;
+
+  /// Analyses offertes à un compte sans abonnement d'analyse (à vie). Au-delà, les analyses sont bloquées.
+  final int freeAnalyses;
 
   static const defaults = Pricing(
     packs: [
@@ -121,6 +125,7 @@ class Pricing {
       extraAnalyses: num_('analyses_supplementaires', d.extraAnalyses, min: 1),
       packDiscount: num_('reduction_pack', d.packDiscount, max: 90),
       farmManagementAvailable: j['gestion_disponible'] == true,
+      freeAnalyses: num_('analyses_gratuites', d.freeAnalyses, max: 1000),
     );
   }
 

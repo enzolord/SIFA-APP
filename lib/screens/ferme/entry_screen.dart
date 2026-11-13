@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/farm_store.dart';
+import '../../services/session.dart';
 import '../../widgets/form_dialog.dart';
 import '../../l10n/l10n.dart';
 
@@ -18,6 +19,8 @@ class _EntryScreenState extends State<EntryScreen> {
   final _feed = TextEditingController();
   final _water = TextEditingController();
   final _weight = TextEditingController();
+  final _eggs = TextEditingController();
+  final _cracked = TextEditingController();
 
   @override
   void initState() {
@@ -28,7 +31,7 @@ class _EntryScreenState extends State<EntryScreen> {
 
   @override
   void dispose() {
-    for (final c in [_dead, _feed, _water, _weight]) {
+    for (final c in [_dead, _feed, _water, _weight, _eggs, _cracked]) {
       c.dispose();
     }
     super.dispose();
@@ -44,6 +47,8 @@ class _EntryScreenState extends State<EntryScreen> {
       feedKg: toNum(_feed.text),
       waterL: toNum(_water.text),
       avgWeightG: _weight.text.trim().isEmpty ? null : toNum(_weight.text),
+      eggs: b.type == FlockType.layer && _eggs.text.trim().isNotEmpty ? toNum(_eggs.text).round() : null,
+      cracked: b.type == FlockType.layer && _cracked.text.trim().isNotEmpty ? toNum(_cracked.text).round() : null,
     ));
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Tx('Journée enregistrée.')));
     Navigator.of(context).pop();
@@ -75,7 +80,11 @@ class _EntryScreenState extends State<EntryScreen> {
                   onChanged: (b) => setState(() => _band = b),
                 ),
                 const SizedBox(height: 16),
-                _field('Poulets morts', _dead, 'poulets'),
+                _field(_band?.type == FlockType.layer ? 'Poules mortes' : 'Poulets morts', _dead, 'poulets'),
+                if (_band?.type == FlockType.layer) ...[
+                  _field('Œufs ramassés', _eggs, 'œufs'),
+                  _field('Dont cassés ou déclassés', _cracked, 'œufs'),
+                ],
                 _field('Aliment distribué', _feed, 'kg'),
                 _field('Eau consommée', _water, 'litres'),
                 _field("Poids moyen (pesée d'un échantillon)", _weight, 'g'),

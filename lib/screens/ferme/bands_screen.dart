@@ -14,9 +14,10 @@ class BandsScreen extends StatelessWidget {
     final v = await showFormDialog(context, title: 'Ajouter une bande', fields: const [
       FieldSpec('Nom de la bande', hint: 'Bande B'),
       FieldSpec('Nombre de volailles', number: true, hint: '500'),
+      FieldSpec('Prix des poussins (FCFA)', number: true, hint: 'Facultatif'),
     ]);
     if (v == null || v[0].isEmpty || toNum(v[1]) <= 0) return;
-    FarmStore.instance.addBand(v[0], Session.instance.flockType, toNum(v[1]).round());
+    FarmStore.instance.addBand(v[0], Session.instance.flockType, toNum(v[1]).round(), chickCost: toNum(v[2]));
   }
 
   @override
