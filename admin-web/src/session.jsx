@@ -39,7 +39,7 @@ export function Login({ message }) {
         const { error } = await sb.auth.signInWithPassword({ email: String(f.get('email')).trim(), password: String(f.get('pwd')) });
         setBusy(false); if (error) setErr('Connexion refusée : ' + error.message);
       }}>
-        <div className="brandmark"><i>S</i> SIFA Admin</div>
+        <div className="brandmark"><img src="/logo-sifa.png" alt="" width="44" height="44" /> SIFA Admin</div>
         <h1 style={{ marginTop: 18 }}>Connexion</h1>
         <p className="muted" style={{ margin: '6px 0 4px' }}>Réservé aux administrateurs de SIFA.</p>
         <label className="f" htmlFor="email">E-mail</label>

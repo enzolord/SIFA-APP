@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 import { sb } from './lib.js';
 import { Login, SessionProvider, useSession } from './session.jsx';
@@ -13,6 +13,7 @@ import Gemini from './pages/Gemini.jsx';
 import Training from './pages/Training.jsx';
 import Content from './pages/Content.jsx';
 import Community from './pages/Community.jsx';
+const Test = lazy(() => import('./pages/Test.jsx'));
 
 const NAV = [
   { group: 'Pilotage' },
@@ -22,6 +23,8 @@ const NAV = [
   { to: '/qualite', label: 'Qualité des réponses', period: true },
   { to: '/gemini', label: 'Photos et Gemini', period: true },
   { to: '/rapports', label: 'Rapports et exports', period: true },
+  { group: 'Essayer' },
+  { to: '/test', label: 'Test caméra' },
   { group: 'Améliorer SIFA' },
   { to: '/entrainement', label: 'Photos et entraînement' },
   { group: 'Contenu de l’application' },
@@ -52,7 +55,7 @@ function Shell() {
   return (
     <div className="shell">
       <aside>
-        <div className="brandmark"><i>S</i> SIFA Admin</div>
+        <div className="brandmark"><img src="/logo-sifa.png" alt="" width="34" height="34" /> SIFA Admin</div>
         <nav aria-label="Sections">
           {NAV.map((n, i) => n.group ? <div className="nav-group" key={i}>{n.group}</div>
             : <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => (isActive ? 'active' : '')}>{n.label}</NavLink>)}
@@ -82,6 +85,7 @@ function Shell() {
             <Route path="/entrainement/*" element={<Training />} />
             <Route path="/contenu/*" element={<Content />} />
             <Route path="/communaute" element={<Community />} />
+            <Route path="/test" element={<Suspense fallback={<div className="empty">Chargement…</div>}><Test /></Suspense>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

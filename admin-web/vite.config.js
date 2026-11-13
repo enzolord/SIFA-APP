@@ -1,13 +1,15 @@
 import { defineConfig } from 'vite';
+import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  resolve: { alias: { '@tensorflow/tfjs-tflite': path.resolve('node_modules/@tensorflow/tfjs-tflite/dist/tf-tflite.fesm.min.js') } },
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon-192.png', 'icon-512.png'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'logo-sifa.png'],
       manifest: {
         name: 'SIFA Admin',
         short_name: 'SIFA Admin',
@@ -29,6 +31,7 @@ export default defineConfig({
         // Les appels à Supabase ne sont jamais mis en cache : les chiffres doivent toujours être frais.
         navigateFallbackDenylist: [/^\/api\//],
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
+        globIgnores: ['tflite/**', 'modele/**'],
         maximumFileSizeToCacheInBytes: 3_000_000,
       },
     }),

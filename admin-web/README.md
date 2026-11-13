@@ -1,7 +1,8 @@
 # SIFA Admin (React, PWA, Vercel)
 
-Outil d'administration de l'application SIFA : statistiques, qualité des réponses, photos des éleveurs
-(étiquetage, ZIP pour ré-entraîner), contenu en direct, publication du modèle.
+Outil d'administration de l'application SIFA : statistiques, qualité des réponses, **test caméra** (photographier une fiente et
+obtenir l'analyse du modèle + l'avis de Gemini), photos des éleveurs (étiquetage, ZIP pour ré-entraîner), contenu en direct,
+publication du modèle.
 
 ## Mise en ligne sur Vercel (5 minutes)
 
@@ -16,6 +17,12 @@ Outil d'administration de l'application SIFA : statistiques, qualité des répon
 Aucune variable n'est obligatoire : le projet Supabase de SIFA est déjà configuré. Pour en changer, ajoutez dans
 Vercel › Settings › Environment Variables : `VITE_SUPABASE_URL` et `VITE_SUPABASE_KEY` (clé *publishable* uniquement,
 jamais la clé secrète ni la clé Gemini).
+
+## Onglet « Test caméra »
+
+Fonctionne en https (donc sur Vercel, ou en local sur `localhost`). Le modèle tourne dans le navigateur : celui publié dans
+Supabase s'il existe, sinon le modèle livré avec l'application (`public/modele/`). Après avoir publié un nouveau modèle,
+rechargez la page. Le bouton « Ajouter à la galerie » envoie la photo dans le bucket `echantillons`, prête à être étiquetée.
 
 ## Installer comme une application (PWA)
 

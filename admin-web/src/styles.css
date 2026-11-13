@@ -156,3 +156,5 @@ nav a:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .chip[aria-pressed=true]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
 .field-inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .field-inline input,.field-inline select{width:auto}
+
+.brandmark img{border-radius:9px;display:block}
