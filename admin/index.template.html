@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SIFA Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Mise en page : barre latérale de navigation + zone de travail à cartes ; sur téléphone, la navigation devient une rangée défilante. */
+:root{
+  --bg:#f2f5f1; --surface:#ffffff; --sunken:#e9efe9; --ink:#0e2f25; --muted:#587066; --line:#d9e3dc;
+  --brand:#0f7a56; --brand-ink:#ffffff; --brand-soft:#d9eee4; --yolk:#e3a912;
+  --ok:#17794f; --ok-soft:#d8efe2; --warn:#8a5a00; --warn-soft:#fbecc4; --bad:#b3261e; --bad-soft:#fbe0dc;
+  --c1:#0f7a56; --c2:#e3a912; --c3:#2f6fb5; --c4:#b5532f; --c5:#7a5bb5; --grid:#dfe7e1;
+  --font-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --font-body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --side:240px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1612; --surface:#15221c; --sunken:#1b2b24; --ink:#e6f0ea; --muted:#93aa9f; --line:#27382f;
+  --brand:#3fbf8a; --brand-ink:#06261a; --brand-soft:#1c3a2d; --yolk:#f0bd2e;
+  --ok:#5dd49b; --ok-soft:#173a2a; --warn:#f0c15a; --warn-soft:#3b2f10; --bad:#ff8f84; --bad-soft:#40201c;
+  --c1:#3fbf8a; --c2:#f0bd2e; --c3:#6fa8e8; --c4:#e8946f; --c5:#a58ae0; --grid:#25352d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1612; --surface:#15221c; --sunken:#1b2b24; --ink:#e6f0ea; --muted:#93aa9f; --line:#27382f;
+  --brand:#3fbf8a; --brand-ink:#06261a; --brand-soft:#1c3a2d; --yolk:#f0bd2e;
+  --ok:#5dd49b; --ok-soft:#173a2a; --warn:#f0c15a; --warn-soft:#3b2f10; --bad:#ff8f84; --bad-soft:#40201c;
+  --c1:#3fbf8a; --c2:#f0bd2e; --c3:#6fa8e8; --c4:#e8946f; --c5:#a58ae0; --grid:#25352d; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--font-body);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--font-display);margin:0;line-height:1.2;text-wrap:balance}
+h1{font-size:26px} h2{font-size:19px} h3{font-size:16px}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--brand)}
+.hidden{display:none!important}
+
+/* connexion */
+#login{min-height:100%;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-left,0px))}
+.login-card{width:min(420px,100%);background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px}
+.login-card h1{margin-bottom:6px}
+.brandmark{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:20px}
+.brandmark i{width:30px;height:30px;border-radius:9px;background:var(--brand);display:grid;place-items:center;color:var(--brand-ink);font-style:normal;font-size:16px}
+
+/* cadre */
+#app{display:grid;grid-template-columns:var(--side) minmax(0,1fr);min-height:100%}
+aside{background:var(--surface);border-right:1px solid var(--line);padding:18px 12px;position:sticky;top:0;height:100vh;overflow-y:auto}
+aside .brandmark{padding:2px 8px 16px}
+.nav-group{margin:14px 8px 4px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700}
+nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:transparent;padding:9px 10px;border-radius:9px;cursor:pointer;color:var(--ink)}
+nav button:hover{background:var(--sunken)}
+nav button[aria-current="page"]{background:var(--brand-soft);color:var(--brand);font-weight:700}
+nav .badge{margin-left:auto}
+main{padding:20px max(20px,env(safe-area-inset-right,0px)) 60px 24px;min-width:0}
+.topbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}
+.topbar .right{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:7px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);font-weight:600}
+.stamp{font-size:13px;color:var(--muted)}
+
+/* composants */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;min-width:0}
+#view>*+*{margin-top:16px}
+.grid>*{margin-top:0!important}
+.card .card{margin-top:0}
+.card h2{margin-bottom:4px}
+.card .sub{color:var(--muted);font-size:14px;margin:0 0 14px}
+.grid{display:grid;gap:16px;min-width:0}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;min-width:0}
+.kpi .l{font-size:13px;color:var(--muted)}
+.kpi .v{font-family:var(--font-display);font-size:30px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:4px}
+.kpi .d{font-size:12.5px;color:var(--muted);margin-top:2px}
+.kpi.good .v{color:var(--ok)} .kpi.bad .v{color:var(--bad)}
+.chart{position:relative;height:260px}
+.chart.tall{height:340px}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:600;background:var(--sunken);color:var(--muted)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.badge{min-width:20px;padding:0 6px;border-radius:999px;background:var(--bad);color:#fff;font-size:12px;text-align:center;font-weight:700}
+.btn{border:1px solid var(--brand);background:var(--brand);color:var(--brand-ink);padding:9px 16px;border-radius:10px;font-weight:600;cursor:pointer}
+.btn.sec{background:transparent;color:var(--brand)}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn.small{padding:5px 10px;font-size:13px;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,nav button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+label.f{display:block;font-weight:600;font-size:13.5px;margin:12px 0 4px}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=search],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--bg)}
+textarea{min-height:80px;resize:vertical}
+.row2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center}
+.switch{display:flex;align-items:center;gap:10px;margin:8px 0;cursor:pointer}
+.switch input{width:20px;height:20px;accent-color:var(--brand)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--sunken);position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:5px;background:var(--sunken);overflow:hidden;min-width:70px}
+.bar>i{display:block;height:100%;background:var(--brand)}
+.bar.bad>i{background:var(--bad)}
+.note{padding:12px 14px;border-radius:10px;background:var(--sunken);color:var(--ink);font-size:14px}
+.note.warn{background:var(--warn-soft);color:var(--warn)} .note.bad{background:var(--bad-soft);color:var(--bad)} .note.ok{background:var(--ok-soft);color:var(--ok)}
+.todo{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.todo:first-child{border-top:0}
+.muted{color:var(--muted)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:10px;z-index:50;max-width:90vw;box-shadow:0 8px 28px rgba(0,0,0,.25)}
+.toast.bad{background:var(--bad);color:#fff}
+.item{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;background:var(--bg)}
+.item .head{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:6px}
+.phone{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--bg)}
+.preview{border-radius:14px;padding:14px;display:flex;gap:10px}
+.preview.info{background:#ddeee5;color:#0e2f25}.preview.warn{background:#fdf0cc;color:#0e2f25}.preview.danger{background:#fbe4df;color:#0e2f25}
+.report h2{margin:22px 0 6px} .report p,.report li{max-width:70ch}
+.report ul{padding-left:20px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+
+@media (max-width: 860px){
+  #app{display:block}
+  aside{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:10px 8px}
+  aside .brandmark{padding:2px 8px 8px}
+  nav{display:flex;gap:4px;overflow-x:auto;padding-bottom:4px}
+  nav button{white-space:nowrap;width:auto}
+  .nav-group{display:none}
+  main{padding:16px max(16px,env(safe-area-inset-left,0px)) 60px}
+}
+@media print{
+  aside,.topbar .right,.actions,.noprint,.toast{display:none!important}
+  #app{display:block} body{background:#fff;color:#000} .card,.kpi{border-color:#bbb;break-inside:avoid}
+  main{padding:0}
+}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="login" class="hidden">
+  <form class="login-card" id="loginForm">
+    <div class="brandmark"><i>S</i> SIFA Admin</div>
+    <h1 style="margin-top:18px">Connexion</h1>
+    <p class="muted" style="margin:6px 0 4px">Réservé aux administrateurs de SIFA.</p>
+    <label class="f" for="email">E-mail</label>
+    <input type="email" id="email" autocomplete="username" required>
+    <label class="f" for="pwd">Mot de passe</label>
+    <input type="password" id="pwd" autocomplete="current-password" required>
+    <div class="actions"><button class="btn" type="submit" id="btnLogin">Se connecter</button></div>
+    <p id="loginMsg" class="note bad hidden" style="margin-top:14px"></p>
+  </form>
+</div>
+
+<div id="app" class="hidden">
+  <aside>
+    <div class="brandmark"><i>S</i> SIFA Admin</div>
+    <nav id="nav" aria-label="Sections"></nav>
+  </aside>
+  <main>
+    <div class="topbar">
+      <h1 id="title">Vue d'ensemble</h1>
+      <div class="right">
+        <span class="stamp" id="stamp"></span>
+        <div class="seg" id="period" role="group" aria-label="Période"></div>
+        <button class="btn sec small" id="btnRefresh">Actualiser</button>
+        <button class="btn sec small" id="btnLogout">Déconnexion</button>
+      </div>
+    </div>
+    <div id="view"></div>
+  </main>
+</div>
+<div id="toast" class="toast hidden" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script id="fiches-base" type="application/json">__FICHES_BASE__</script>
+<script>
+'use strict';
+/* ───────────── Connexion à Supabase (clé publique : la sécurité repose sur les règles RLS) ───────────── */
+const URL_ = 'https://qprgpmmvdjrmslfsraae.supabase.co';
+const KEY = 'sb_publishable_HfgFOYXWuyNAWrjDGWJjiA_7jSssFOK';
+const memStore = {}; 
+const safeStorage = {
+  getItem: k => { try { return localStorage.getItem(k); } catch (_) { return memStore[k] ?? null; } },
+  setItem: (k, v) => { try { localStorage.setItem(k, v); } catch (_) { memStore[k] = v; } },
+  removeItem: k => { try { localStorage.removeItem(k); } catch (_) { delete memStore[k]; } },
+};
+const sb = supabase.createClient(URL_, KEY, { auth: { storage: safeStorage } });
+const BASE = JSON.parse(document.getElementById('fiches-base').textContent);
+
+/* ───────────── Outils ───────────── */
+const $ = id => document.getElementById(id);
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (k === 'value') e.value = v;
+    else if (k === 'checked') e.checked = !!v;
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat(Infinity)) {
+    if (kid == null || kid === false) continue;
+    e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+  return e;
+}
+const nf = n => (n == null ? '—' : Number(n).toLocaleString('fr-FR'));
+const pct = (a, b, d = 0) => (b > 0 ? (100 * a / b).toFixed(d).replace('.', ',') + ' %' : '—');
+const ratio = (a, b) => (b > 0 ? a / b : null);
+const fdate = s => (s ? new Date(s).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '—');
+let toastTimer;
+function toast(msg, bad) {
+  const t = $('toast'); t.textContent = msg; t.className = 'toast' + (bad ? ' bad' : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add('hidden'), bad ? 6000 : 2800);
+}
+/* Bouton à double clic : le premier clic demande confirmation. */
+function armed(label, action, cls = 'btn small danger') {
+  const b = h('button', { class: cls, type: 'button' }, label);
+  let t;
+  b.addEventListener('click', () => {
+    if (b.dataset.armed) { clearTimeout(t); delete b.dataset.armed; b.textContent = label; action(); return; }
+    b.dataset.armed = '1'; b.textContent = 'Confirmer ?';
+    t = setTimeout(() => { delete b.dataset.armed; b.textContent = label; }, 3500);
+  });
+  return b;
+}
+function fail(e, ctx) { console.error(ctx, e); toast((ctx ? ctx + ' : ' : '') + (e?.message || e), true); }
+async function must(promise) { const { data, error } = await promise; if (error) throw error; return data; }
+
+const L = {
+  maladie: { healthy: 'Fiente saine', coccidiosis: 'Coccidiose', salmonella: 'Salmonellose', newcastle: 'Newcastle', autre: 'Autre maladie', inconnue: 'Inconnue', inconnu: 'Inconnue' },
+  issue: { ok: 'Photo acceptée', notDropping: 'Pas une fiente', tooDark: 'Trop sombre', tooPlain: 'Surface unie', unclear: 'Photo peu claire', modelError: 'Erreur du modèle', inconnu: '—' },
+  gemini: { dropping: 'Gemini : fiente', notDropping: 'Gemini : autre chose', unknown: 'Gemini : sans réponse', absent: 'Non interrogé' },
+  fiab: { high: 'Forte', medium: 'Moyenne', low: 'Faible', inconnu: '—' },
+  ecran: {
+    Accueil: 'Accueil', Historique: 'Historique', Scanner: 'Scanner', Communaute: 'Communauté', Profil: 'Profil',
+    SignsScreen: 'Questions sur les signes', ResultScreen: 'Résultat', RemedesScreen: 'Remèdes et conseils', AbonnementScreen: 'Formules',
+    NewPostScreen: 'Nouvelle publication', PostDetailScreen: 'Détail d’une publication', GroupDetailScreen: 'Groupe de discussion',
+    BandsScreen: 'Mes bandes', BandDetailScreen: 'Détail d’une bande', EntryScreen: 'Saisie journalière',
+    'Calendrier de vaccination': 'Calendrier de vaccination', 'Pharmacies vétérinaires': 'Pharmacies vétérinaires', 'Fiches maladies': 'Fiches maladies',
+  },
+  action: {
+    appel_pharmacie: 'Appel d’une pharmacie', itineraire_maps: 'Itinéraire (Google Maps)', itineraire_carte: 'Itinéraire sur la carte',
+    connexion_google: 'Connexion Google', code_active: 'Code d’activation utilisé',
+  },
+};
+const lab = (dict, k) => dict[k] ?? (k && k.startsWith?.('tuile:') ? 'Accueil › ' + k.slice(6) : k ?? '—');
+const MALADIES = ['healthy', 'coccidiosis', 'salmonella', 'newcastle'];
+
+/* Graphiques : couleurs lues dans les variables CSS pour suivre le thème. */
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const charts = [];
+function chart(canvas, cfg) {
+  const ink = css('--muted'), grid = css('--grid');
+  Chart.defaults.font.family = css('--font-body'); Chart.defaults.color = ink;
+  cfg.options = Object.assign({ responsive: true, maintainAspectRatio: false, animation: false }, cfg.options || {});
+  if (cfg.options.scales) for (const s of Object.values(cfg.options.scales)) { s.grid = Object.assign({ color: grid }, s.grid); s.ticks = Object.assign({ precision: 0 }, s.ticks); }
+  const c = new Chart(canvas, cfg); charts.push(c); return c;
+}
+function killCharts() { while (charts.length) charts.pop().destroy(); }
+function chartBox(cls = '') { const c = h('canvas'); return [h('div', { class: 'chart ' + cls }, c), c]; }
+
+/* ───────────── État ───────────── */
+const S = { days: 30, stats: null, me: null, section: 'overview', badges: {} };
+const DAYS = [7, 30, 90, 365];
+
+/* ───────────── Accès aux données ───────────── */
+async function loadStats() {
+  S.stats = await must(sb.rpc('stats_admin', { p_jours: S.days }));
+  $('stamp').textContent = 'Mis à jour ' + fdate(S.stats.genere_le);
+  return S.stats;
+}
+const getC = async key => (await must(sb.from('contenu').select('valeur').eq('cle', key).maybeSingle()))?.valeur ?? {};
+const setC = async (key, valeur) => must(sb.from('contenu').upsert({ cle: key, valeur }));
+
+/* ───────────── Sections ───────────── */
+const SECTIONS = [
+  { group: 'Pilotage' },
+  { id: 'overview', label: 'Vue d’ensemble', render: renderOverview },
+  { id: 'usage', label: 'Utilisation', render: renderUsage },
+  { id: 'quality', label: 'Qualité des réponses', render: renderQuality },
+  { id: 'reports', label: 'Rapports et exports', render: renderReports },
+  { group: 'Contenu de l’application' },
+  { id: 'announce', label: 'Annonce et maintenance', render: renderAnnounce },
+  { id: 'plans', label: 'Formules et codes', render: renderPlans },
+  { id: 'pharmacies', label: 'Pharmacies', render: renderPharmacies },
+  { id: 'sheets', label: 'Fiches maladies', render: renderSheets },
+  { group: 'Gestion' },
+  { id: 'community', label: 'Communauté', render: renderCommunity },
+  { id: 'users', label: 'Utilisateurs', render: renderUsers },
+  { id: 'model', label: 'Modèle d’analyse', render: renderModel },
+];
+function buildNav() {
+  const nav = $('nav'); nav.replaceChildren();
+  for (const s of SECTIONS) {
+    if (s.group) { nav.append(h('div', { class: 'nav-group' }, s.group)); continue; }
+    const b = h('button', { type: 'button', 'data-id': s.id, onclick: () => go(s.id) }, s.label);
+    if (S.badges[s.id]) b.append(h('span', { class: 'badge' }, S.badges[s.id]));
+    if (s.id === S.section) b.setAttribute('aria-current', 'page');
+    nav.append(b);
+  }
+}
+function buildPeriod() {
+  const box = $('period'); box.replaceChildren();
+  for (const d of DAYS) box.append(h('button', { type: 'button', 'aria-pressed': String(d === S.days), onclick: () => { S.days = d; buildPeriod(); go(S.section); } }, d === 365 ? '1 an' : d + ' j'));
+  box.classList.toggle('hidden', !['overview', 'usage', 'quality', 'reports'].includes(S.section));
+}
+async function go(id) {
+  S.section = id;
+  const sec = SECTIONS.find(s => s.id === id);
+  $('title').textContent = sec.label; buildNav(); buildPeriod(); killCharts();
+  const view = $('view'); view.replaceChildren(h('div', { class: 'empty' }, 'Chargement…'));
+  try { const node = await sec.render(); view.replaceChildren(...[].concat(node).flat().filter(Boolean)); }
+  catch (e) { view.replaceChildren(h('div', { class: 'note bad' }, 'Impossible de charger cette section : ' + (e?.message || e), h('br'), e?.message?.includes('stats_admin') ? 'Exécutez supabase/admin.sql dans Supabase (SQL Editor).' : '')); console.error(e); }
+  window.scrollTo(0, 0);
+}
+
+/* ═════════════ Vue d'ensemble ═════════════ */
+function kpi(label, value, detail, cls = '') { return h('div', { class: 'kpi ' + cls }, h('div', { class: 'l' }, label), h('div', { class: 'v' }, value), detail ? h('div', { class: 'd' }, detail) : null); }
+
+async function renderOverview() {
+  const s = await loadStats(), u = s.utilisateurs, q = s.qualite, a = s.analyses;
+  const okRate = ratio(q.justes, q.retours);
+  const stick = ratio(u.actifs_24h, u.actifs_30j);
+  const [c1, cv1] = chartBox(), [c2, cv2] = chartBox();
+  const todos = await buildTodos(s);
+  S.badges = { quality: 0, community: s.communaute.signalements_periode || 0, pharmacies: s.pharmacies.perimees || 0 };
+  buildNav();
+  const node = [
+    h('div', { class: 'kpis' },
+      kpi('Utilisateurs actifs', nf(u.actifs_periode), `${nf(u.actifs_24h)} aujourd’hui · ${nf(u.actifs_7j)} sur 7 j`),
+      kpi('Nouveaux utilisateurs', nf(u.nouveaux_periode), `${nf(u.appareils_total)} téléphones au total`),
+      kpi('Comptes connectés', nf(u.comptes), `+${nf(u.comptes_periode)} sur la période`),
+      kpi('Analyses réalisées', nf(a.total), `${nf(a.appareils)} éleveurs ont analysé`),
+      kpi('Bonnes réponses', okRate == null ? '—' : pct(q.justes, q.retours), `${nf(q.retours)} avis reçus`, okRate == null ? '' : okRate >= .8 ? 'good' : okRate < .6 ? 'bad' : ''),
+      kpi('Mauvaises réponses', okRate == null ? '—' : pct(q.faux, q.retours), `${nf(q.faux)} résultats jugés faux`, okRate != null && okRate < .6 ? 'bad' : ''),
+      kpi('Alertes graves', nf(a.alertes), 'Signes nerveux ou mortalité brutale'),
+      kpi('Fidélité', stick == null ? '—' : pct(u.actifs_24h, u.actifs_30j), 'Actifs du jour / actifs du mois'),
+    ),
+    h('div', { class: 'grid g2' },
+      h('div', { class: 'card' }, h('h2', {}, 'Activité par jour'), h('p', { class: 'sub' }, 'Utilisateurs actifs, nouveaux et analyses.'), c1),
+      h('div', { class: 'card' }, h('h2', {}, 'Ce que SIFA a trouvé'), h('p', { class: 'sub' }, 'Répartition des résultats d’analyse.'), c2)),
+    h('div', { class: 'card' }, h('h2', {}, 'À surveiller'), h('p', { class: 'sub' }, 'Ce qui demande une action de votre part.'), todos),
+  ];
+  queueMicrotask(() => {
+    const labels = s.serie.map(r => r.jour.slice(5).split('-').reverse().join('/'));
+    chart(cv1, { data: { labels, datasets: [
+      { type: 'bar', label: 'Analyses', data: s.serie.map(r => r.analyses), backgroundColor: css('--c2'), order: 3, yAxisID: 'y' },
+      { type: 'line', label: 'Actifs', data: s.serie.map(r => r.actifs), borderColor: css('--c1'), backgroundColor: css('--c1'), tension: .3, pointRadius: 0, borderWidth: 2.5, order: 1 },
+      { type: 'line', label: 'Nouveaux', data: s.serie.map(r => r.nouveaux), borderColor: css('--c3'), backgroundColor: css('--c3'), tension: .3, pointRadius: 0, borderWidth: 2, order: 2 },
+    ] }, options: { scales: { y: { beginAtZero: true }, x: { ticks: { maxTicksLimit: 8 } } }, plugins: { legend: { position: 'bottom' } } } });
+    const keys = MALADIES.filter(k => a.par_maladie[k]);
+    if (!keys.length) { cv2.parentElement.replaceChildren(h('div', { class: 'empty' }, 'Aucune analyse sur la période.')); return; }
+    chart(cv2, { type: 'doughnut', data: { labels: keys.map(k => L.maladie[k]), datasets: [{ data: keys.map(k => a.par_maladie[k]), backgroundColor: [css('--c1'), css('--c2'), css('--c4'), css('--c5')], borderColor: css('--surface'), borderWidth: 2 }] }, options: { cutout: '62%', plugins: { legend: { position: 'bottom' } } } });
+  });
+  return node;
+}
+
+/* Liste « à surveiller », déduite des statistiques et du contenu publié. */
+async function buildTodos(s) {
+  const items = [];
+  const add = (level, title, text, go_) => items.push({ level, title, text, go_ });
+  const [annonce, maint] = await Promise.all([getC('annonce').catch(() => ({})), getC('maintenance').catch(() => ({}))]);
+  if (maint.actif) add('bad', 'Maintenance activée', 'Les éleveurs voient un écran de maintenance à la place de l’application.', 'announce');
+  if (annonce.actif) add('ok', 'Une annonce est affichée', 'Elle apparaît en haut de l’accueil de l’application.', 'announce');
+  const q = s.qualite, okRate = ratio(q.justes, q.retours);
+  if (q.retours < 30) add('warn', 'Peu d’avis reçus', `${q.retours} avis pour ${s.analyses.total} analyses : trop peu pour juger la fiabilité. Il faut au moins 30 avis.`, 'quality');
+  else if (okRate < .7) add('bad', 'Taux de bonnes réponses bas', `${pct(q.justes, q.retours)} de bonnes réponses. Voir quelles maladies sont confondues et ré-entraîner le modèle.`, 'quality');
+  else add('ok', 'Taux de bonnes réponses correct', `${pct(q.justes, q.retours)} sur ${q.retours} avis.`, 'quality');
+  if (s.communaute.signalements_periode > 0) add('warn', 'Publications signalées', `${s.communaute.signalements_periode} signalement(s) sur la période.`, 'community');
+  if (s.pharmacies.perimees > 0) add('warn', 'Stocks de pharmacies anciens', `${s.pharmacies.perimees} pharmacie(s) dont le stock n’a pas été mis à jour depuis 30 jours.`, 'pharmacies');
+  if (s.pharmacies.actives === 0) add('warn', 'Aucune pharmacie enregistrée', 'L’application affiche encore l’exemple intégré (non réel) tant que la liste est vide.', 'pharmacies');
+  const sc = s.scans, gem = sc.gemini || {}, totalG = Object.values(gem).reduce((x, y) => x + y, 0);
+  if (totalG >= 20 && (gem.unknown || 0) + (gem.absent || 0) > .5 * totalG) add('warn', 'Gemini répond rarement', 'Plus de la moitié des photos n’ont pas été vérifiées en ligne : vérifiez la clé et le quota (section Modèle d’analyse).', 'model');
+  if (!items.length) add('ok', 'Rien à signaler', 'Tout est en ordre.');
+  return items.map(i => h('div', { class: 'todo' }, h('span', { class: 'pill ' + i.level }, i.level === 'ok' ? 'OK' : i.level === 'warn' ? 'À voir' : 'Urgent'), h('div', {}, h('b', {}, i.title), h('div', { class: 'muted' }, i.text), i.go_ ? h('button', { class: 'btn small sec', type: 'button', style: 'margin-top:6px', onclick: () => go(i.go_) }, 'Ouvrir') : null)));
+}
+
+/* ═════════════ Utilisation ═════════════ */
+function barTable(rows, cols) {
+  const max = Math.max(1, ...rows.map(r => r.value));
+  return h('div', { class: 'tablewrap' }, h('table', {}, h('thead', {}, h('tr', {}, cols.map((c, i) => h('th', { class: i ? 'num' : '' }, c)), h('th', {}, ''))),
+    h('tbody', {}, rows.length ? rows.map(r => h('tr', {}, h('td', {}, r.label), r.cells.map(c => h('td', { class: 'num' }, c)), h('td', { style: 'width:30%' }, h('div', { class: 'bar' }, h('i', { style: `width:${Math.round(100 * r.value / max)}%` }))))) : h('tr', {}, h('td', { colspan: cols.length + 1, class: 'empty' }, 'Pas encore de données.')))));
+}
+async function renderUsage() {
+  const s = await loadStats(), f = s.fonctionnalites, u = s.utilisateurs, e = s.entonnoir, r = s.retention;
+  const [cF, cvF] = chartBox(), [cH, cvH] = chartBox();
+  const screens = f.ecrans.map(x => ({ label: lab(L.ecran, x.nom), value: x.vues, cells: [nf(x.vues), nf(x.appareils)] }));
+  const actions = f.actions.map(x => ({ label: lab(L.action, x.nom), value: x.n, cells: [nf(x.n), nf(x.appareils)] }));
+  const funnel = [['Ouvert l’application', e.ouverture], ['Pris une photo', e.scan], ['Obtenu une analyse', e.analyse], ['Donné son avis', e.retour]];
+  const langs = Object.entries(u.par_langue), vers = Object.entries(u.par_version);
+  queueMicrotask(() => {
+    chart(cvF, { type: 'bar', data: { labels: funnel.map(x => x[0]), datasets: [{ data: funnel.map(x => x[1]), backgroundColor: css('--c1'), borderRadius: 6 }] }, options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } } });
+    chart(cvH, { type: 'bar', data: { labels: s.analyses.par_heure.map((_, i) => i + ' h'), datasets: [{ label: 'Analyses', data: s.analyses.par_heure, backgroundColor: css('--c2'), borderRadius: 3 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { ticks: { maxTicksLimit: 12 } } } } });
+  });
+  return [
+    h('div', { class: 'kpis' },
+      kpi('Actifs aujourd’hui', nf(u.actifs_24h)), kpi('Actifs sur 7 jours', nf(u.actifs_7j)), kpi('Actifs sur 30 jours', nf(u.actifs_30j)),
+      kpi('Ouvertures par actif', String(u.moyenne_ouvertures_par_actif ?? '—').replace('.', ','), 'Sur la période'),
+      kpi('Reviennent après 1 jour', pct(r.revenus_1j, r.cohorte_1j), `${nf(r.revenus_1j)} sur ${nf(r.cohorte_1j)}`),
+      kpi('Reviennent après 7 jours', pct(r.revenus_7j, r.cohorte_7j), `${nf(r.revenus_7j)} sur ${nf(r.cohorte_7j)}`)),
+    h('div', { class: 'grid g2' },
+      h('div', { class: 'card' }, h('h2', {}, 'Écrans les plus utilisés'), h('p', { class: 'sub' }, 'Nombre de vues et d’éleveurs différents.'), barTable(screens, ['Écran', 'Vues', 'Éleveurs'])),
+      h('div', { class: 'card' }, h('h2', {}, 'Actions les plus faites'), h('p', { class: 'sub' }, 'Appels, itinéraires, tuiles de l’accueil, connexions.'), barTable(actions, ['Action', 'Fois', 'Éleveurs']))),
+    h('div', { class: 'grid g2', style: 'margin-top:16px' },
+      h('div', { class: 'card' }, h('h2', {}, 'Parcours des utilisateurs'), h('p', { class: 'sub' }, 'Combien d’éleveurs arrivent à chaque étape.'), cF,
+        e.ouverture ? h('p', { class: 'muted', style: 'margin:10px 0 0' }, `${pct(e.analyse, e.ouverture)} des éleveurs qui ouvrent l’application obtiennent une analyse.`) : null),
+      h('div', { class: 'card' }, h('h2', {}, 'Heure des analyses'), h('p', { class: 'sub' }, 'Heure locale de Douala.'), cH)),
+    h('div', { class: 'grid g3', style: 'margin-top:16px' },
+      h('div', { class: 'card' }, h('h2', {}, 'Langues'), simpleList(langs.map(([k, v]) => [k === 'fr' ? 'Français' : k === 'en' ? 'Anglais' : k, v]))),
+      h('div', { class: 'card' }, h('h2', {}, 'Versions de l’application'), simpleList(vers)),
+      h('div', { class: 'card' }, h('h2', {}, 'Type d’élevage (comptes)'), simpleList(Object.entries(u.par_type_elevage).map(([k, v]) => [k === 'chair' ? 'Poulets de chair' : k === 'pondeuse' ? 'Poules pondeuses' : k === 'mixte' ? 'Mixte' : k, v])))),
+    h('div', { class: 'card', style: 'margin-top:16px' }, h('h2', {}, 'Villes des comptes'), simpleList(u.par_ville.map(x => [x.ville, x.n]), 'Aucune ville renseignée.')),
+  ];
+}
+function simpleList(pairs, empty = 'Pas encore de données.') {
+  if (!pairs.length) return h('p', { class: 'muted' }, empty);
+  const max = Math.max(1, ...pairs.map(p => p[1]));
+  return h('div', {}, pairs.map(([k, v]) => h('div', { class: 'todo', style: 'align-items:center' }, h('div', { style: 'flex:1;min-width:0' }, k), h('div', { class: 'bar', style: 'width:80px' }, h('i', { style: `width:${Math.round(100 * v / max)}%` })), h('b', { style: 'min-width:36px;text-align:right' }, nf(v)))));
+}
+
+/* ═════════════ Qualité ═════════════ */
+const SAMPLE_MIN = 30;
+async function renderQuality() {
+  const s = await loadStats(), q = s.qualite, a = s.analyses, sc = s.scans;
+  const [cG, cvG] = chartBox(), [cS, cvS] = chartBox();
+  const small = q.retours < SAMPLE_MIN;
+  const rate = (o) => (o && o.retours ? o.justes / o.retours : null);
+  const byD = MALADIES.map(k => ({ k, ...(q.par_maladie[k] || { retours: 0, justes: 0 }) }));
+  const byF = ['high', 'medium', 'low'].map(k => ({ k, ...(q.par_fiabilite[k] || { retours: 0, justes: 0 }) }));
+  const cov = ratio(q.retours, a.total);
+  const rejected = Object.entries(sc.par_issue).filter(([k]) => k !== 'ok');
+  const rejTotal = rejected.reduce((x, [, v]) => x + v, 0);
+  queueMicrotask(() => {
+    chart(cvG, { type: 'doughnut', data: { labels: ['Bonnes réponses', 'Mauvaises réponses'], datasets: [{ data: [q.justes, q.faux], backgroundColor: [css('--ok'), css('--bad')], borderColor: css('--surface'), borderWidth: 2 }] }, options: { cutout: '65%', plugins: { legend: { position: 'bottom' } } } });
+    chart(cvS, { type: 'bar', data: { labels: Object.keys(sc.par_issue).map(k => lab(L.issue, k)), datasets: [{ data: Object.values(sc.par_issue), backgroundColor: Object.keys(sc.par_issue).map(k => k === 'ok' ? css('--c1') : css('--c4')), borderRadius: 6 }] }, options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } } });
+  });
+  const rateRow = (label, o) => h('tr', {}, h('td', {}, label), h('td', { class: 'num' }, nf(o.retours)), h('td', { class: 'num' }, o.retours ? pct(o.justes, o.retours) : '—'),
+    h('td', { style: 'width:30%' }, o.retours ? h('div', { class: 'bar' + (o.justes / o.retours < .6 ? ' bad' : '') }, h('i', { style: `width:${Math.round(100 * o.justes / o.retours)}%` })) : ''));
+  const rateTable = rows => h('div', { class: 'tablewrap' }, h('table', {}, h('thead', {}, h('tr', {}, h('th', {}, ''), h('th', { class: 'num' }, 'Avis'), h('th', { class: 'num' }, 'Justes'), h('th', {}, ''))), h('tbody', {}, rows)));
+  const hi = q.par_fiabilite.high, lo = q.par_fiabilite.low;
+  const calib = hi && lo && hi.retours >= 10 && lo.retours >= 10 && hi.justes / hi.retours < lo.justes / lo.retours;
+  return [
+    small ? h('div', { class: 'note warn', style: 'margin-bottom:16px' }, `Seulement ${q.retours} avis : les pourcentages ne sont pas encore fiables (il faut au moins ${SAMPLE_MIN} avis). Le bouton « Ce résultat était-il juste ? » apparaît sous chaque résultat dans l’application.`) : null,
+    h('div', { class: 'kpis' },
+      kpi('Bonnes réponses', pct(q.justes, q.retours), `${nf(q.justes)} avis « juste »`, !small && rate(q) != null ? '' : ''),
+      kpi('Mauvaises réponses', pct(q.faux, q.retours), `${nf(q.faux)} avis « faux »`),
+      kpi('Avis reçus', nf(q.retours), `${pct(q.retours, a.total)} des analyses`),
+      kpi('Confiance moyenne du modèle', a.confiance_moyenne != null ? pct(Number(a.confiance_moyenne), 1) : '—', 'Sur toutes les analyses'),
+      kpi('Photos refusées', pct(rejTotal, sc.total), `${nf(rejTotal)} sur ${nf(sc.total)} photos`),
+      kpi('Analyses sans question', pct(a.photo_seule, a.total), 'Photo seule, moins fiable')),
+    h('div', { class: 'grid g2' },
+      h('div', { class: 'card' }, h('h2', {}, 'Bonnes et mauvaises réponses'), h('p', { class: 'sub' }, 'D’après l’avis des éleveurs.'), q.retours ? cG : h('div', { class: 'empty' }, 'Aucun avis pour le moment.')),
+      h('div', { class: 'card' }, h('h2', {}, 'Photos acceptées et refusées'), h('p', { class: 'sub' }, 'Raison du refus quand ce n’est pas une fiente exploitable.'), sc.total ? cS : h('div', { class: 'empty' }, 'Aucun scan sur la période.'))),
+    h('div', { class: 'grid g2', style: 'margin-top:16px' },
+      h('div', { class: 'card' }, h('h2', {}, 'Par maladie annoncée'), h('p', { class: 'sub' }, 'Quand SIFA annonce cette maladie, combien de fois a-t-elle raison ?'), rateTable(byD.map(r => rateRow(L.maladie[r.k], r)))),
+      h('div', { class: 'card' }, h('h2', {}, 'Par niveau de fiabilité'), h('p', { class: 'sub' }, 'Une fiabilité « forte » doit se tromper moins qu’une fiabilité « faible ».'), rateTable(byF.map(r => rateRow('Fiabilité ' + L.fiab[r.k].toLowerCase(), r))),
+        calib ? h('div', { class: 'note bad', style: 'margin-top:12px' }, 'La fiabilité « forte » se trompe plus que la « faible » : les poids des signes dans triage.dart sont à revoir avec le vétérinaire.') : null)),
+    h('div', { class: 'grid g2', style: 'margin-top:16px' },
+      h('div', { class: 'card' }, h('h2', {}, 'Questions sur les signes : utile ?'), h('p', { class: 'sub' }, 'Compare les analyses avec réponses aux questions et celles avec la photo seule.'),
+        rateTable([rateRow('Avec réponses aux questions', q.avec_questions), rateRow('Photo seule', q.photo_seule)])),
+      h('div', { class: 'card' }, h('h2', {}, 'Confusions fréquentes'), h('p', { class: 'sub' }, 'Ce que SIFA a annoncé, et ce que c’était vraiment selon l’éleveur.'),
+        q.confusions.length ? h('div', { class: 'tablewrap' }, h('table', {}, h('thead', {}, h('tr', {}, h('th', {}, 'SIFA a dit'), h('th', {}, 'En réalité'), h('th', { class: 'num' }, 'Fois'))),
+          h('tbody', {}, q.confusions.map(c => h('tr', {}, h('td', {}, lab(L.maladie, c.predit)), h('td', {}, lab(L.maladie, c.reel)), h('td', { class: 'num' }, c.n)))))) : h('p', { class: 'muted' }, 'Aucune confusion signalée.'))),
+    h('div', { class: 'card', style: 'margin-top:16px' }, h('h2', {}, 'Vérification en ligne (Gemini)'), h('p', { class: 'sub' }, 'Réponse de Gemini pour chaque photo envoyée.'),
+      simpleList(Object.entries(sc.gemini).map(([k, v]) => [lab(L.gemini, k), v]), 'Aucun scan.')),
+  ];
+}
+
+/* ═════════════ Rapports ═════════════ */
+function reportModel(s) {
+  const u = s.utilisateurs, q = s.qualite, a = s.analyses, sc = s.scans, f = s.fonctionnalites, r = s.retention;
+  const topD = Object.entries(a.par_maladie).sort((x, y) => y[1] - x[1])[0];
+  const topS = f.ecrans.filter(x => !['Accueil', 'Historique', 'Scanner', 'Communaute', 'Profil'].includes(x.nom))[0];
+  const rejected = Object.entries(sc.par_issue).filter(([k]) => k !== 'ok').reduce((x, [, v]) => x + v, 0);
+  const okRate = ratio(q.justes, q.retours);
+  const facts = [
+    `${nf(u.actifs_periode)} éleveurs actifs sur ${s.periode_jours} jours, dont ${nf(u.nouveaux_periode)} nouveaux. ${nf(u.actifs_7j)} actifs sur les 7 derniers jours.`,
+    `${nf(a.total)} analyses réalisées par ${nf(a.appareils)} éleveurs${topD ? `. Résultat le plus fréquent : ${lab(L.maladie, topD[0])} (${pct(topD[1], a.total)})` : ''}.`,
+    q.retours ? `${pct(q.justes, q.retours)} de bonnes réponses et ${pct(q.faux, q.retours)} de mauvaises, sur ${nf(q.retours)} avis (${pct(q.retours, a.total)} des analyses).` : 'Aucun avis reçu sur la qualité des réponses.',
+    `${nf(sc.total)} photos prises, dont ${pct(rejected, sc.total)} refusées.`,
+    topS ? `Écran le plus utilisé (hors onglets) : ${lab(L.ecran, topS.nom)}, ${nf(topS.vues)} vues.` : 'Pas encore de données d’usage détaillées.',
+    r.cohorte_7j ? `${pct(r.revenus_7j, r.cohorte_7j)} des éleveurs reviennent après 7 jours.` : 'Rétention à 7 jours : pas encore assez d’ancienneté.',
+    `${nf(a.alertes)} alerte(s) grave(s) (signes nerveux ou mortalité brutale).`,
+    `Communauté : ${nf(s.communaute.publications)} publications, ${nf(s.communaute.commentaires)} commentaires, ${nf(s.communaute.signalements_periode)} signalement(s).`,
+  ];
+  const recs = [];
+  if (q.retours < SAMPLE_MIN) recs.push('Collecter davantage d’avis : moins de 30 réponses, impossible de juger la fiabilité du modèle.');
+  else if (okRate < .7) recs.push('Taux de bonnes réponses sous 70 % : rassembler les cas faux, les faire valider par le vétérinaire et ré-entraîner le modèle.');
+  if (sc.total && rejected / sc.total > .3) recs.push('Plus de 30 % des photos sont refusées : renforcer les conseils de cadrage dans l’écran de scan.');
+  if (a.total && a.photo_seule / a.total > .5) recs.push('Plus de la moitié des analyses se font sans répondre aux questions : rendre les questions plus visibles.');
+  if (r.cohorte_7j >= 20 && r.revenus_7j / r.cohorte_7j < .2) recs.push('Moins de 20 % des éleveurs reviennent après 7 jours : prévoir des rappels (calendrier de vaccination) et du contenu régulier.');
+  if (s.pharmacies.perimees > 0) recs.push(`Mettre à jour le stock de ${s.pharmacies.perimees} pharmacie(s).`);
+  if (s.communaute.signalements_periode > 0) recs.push('Traiter les publications signalées dans la section Communauté.');
+  if (!recs.length) recs.push('Aucune action urgente. Continuer à collecter des avis pour suivre la fiabilité.');
+  return { facts, recs };
+}
+async function renderReports() {
+  const s = await loadStats(), m = reportModel(s);
+  const text = () => `Rapport SIFA – ${s.periode_jours} derniers jours\n\n` + m.facts.map(x => '• ' + x).join('\n') + '\n\nActions conseillées\n' + m.recs.map(x => '• ' + x).join('\n');
+  const csv = (name, rows) => {
+    if (!rows.length) return toast('Rien à exporter.', true);
+    const cols = Object.keys(rows[0]);
+    const esc = v => { v = v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v); return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    const body = [cols.join(';'), ...rows.map(r => cols.map(c => esc(r[c])).join(';'))].join('\n');
+    const a = h('a', { href: URL.createObjectURL(new Blob(['﻿' + body], { type: 'text/csv;charset=utf-8' })), download: name });
+    document.body.append(a); a.click(); a.remove();
+  };
+  const exp = (label, fn) => h('button', { class: 'btn sec small', type: 'button', onclick: async e => { e.target.disabled = true; try { await fn(); } catch (x) { fail(x, 'Export'); } e.target.disabled = false; } }, label);
+  const since = new Date(Date.now() - s.periode_jours * 864e5).toISOString();
+  return h('div', { class: 'card report' },
+    h('div', { class: 'actions noprint', style: 'margin-top:0' },
+      h('button', { class: 'btn', type: 'button', onclick: () => window.print() }, 'Imprimer / PDF'),
+      h('button', { class: 'btn sec', type: 'button', onclick: async () => { try { await navigator.clipboard.writeText(text()); toast('Rapport copié, prêt à coller dans WhatsApp ou un e-mail.'); } catch (_) { toast('Copie impossible.', true); } } }, 'Copier le texte')),
+    h('h1', { style: 'margin-top:16px' }, 'Rapport SIFA'),
+    h('p', { class: 'muted' }, `Période : ${s.periode_jours} derniers jours · généré le ${fdate(s.genere_le)}`),
+    h('h2', {}, 'Chiffres clés'), h('ul', {}, m.facts.map(x => h('li', {}, x))),
+    h('h2', {}, 'Actions conseillées'), h('ul', {}, m.recs.map(x => h('li', {}, x))),
+    h('div', { class: 'noprint' },
+      h('h2', {}, 'Exports (CSV, ouvrable dans Excel)'),
+      h('div', { class: 'actions', style: 'margin-top:8px' },
+        exp('Activité par jour', async () => csv('sifa_activite_par_jour.csv', s.serie)),
+        exp('Événements bruts (10 000 max)', async () => csv('sifa_evenements.csv', await must(sb.from('evenements').select('cree_le,appareil,nom,props,langue,version_app').gte('cree_le', since).order('cree_le', { ascending: false }).limit(10000)))),
+        exp('Utilisateurs', async () => csv('sifa_utilisateurs.csv', await must(sb.from('profiles').select('nom,email,telephone,ville,ferme,type_elevage,role,langue,created_at').limit(5000)))),
+        exp('Pharmacies', async () => csv('sifa_pharmacies.csv', await must(sb.from('pharmacies').select('*'))))),
+      h('p', { class: 'muted' }, 'Les événements bruts ne contiennent ni photo, ni nom : seulement un identifiant aléatoire par téléphone.')));
+}
+
+/* ═════════════ Annonce et maintenance ═════════════ */
+const bi = (fr, en) => ({ fr: fr || '', en: en || '' });
+function biField(label, value, onInput, { area = false } = {}) {
+  const mk = lang => { const el = h(area ? 'textarea' : 'input', { type: area ? null : 'text', value: value?.[lang] || '' }); el.addEventListener('input', () => onInput(lang, el.value)); return el; };
+  return h('div', { class: 'row2' }, h('div', {}, h('label', { class: 'f' }, label + ' (français)'), mk('fr')), h('div', {}, h('label', { class: 'f' }, label + ' (anglais)'), mk('en')));
+}
+async function renderAnnounce() {
+  const A = Object.assign({ actif: false, niveau: 'info', titre: bi(), texte: bi() }, await getC('annonce'));
+  const M = Object.assign({ actif: false, message: bi() }, await getC('maintenance'));
+  const prev = h('div'); const drawPrev = () => prev.replaceChildren(A.actif ? h('div', { class: 'preview ' + A.niveau }, h('div', {}, h('b', {}, A.titre.fr || '(titre)'), h('div', {}, A.texte.fr || '(texte)'))) : h('p', { class: 'muted' }, 'Annonce désactivée : rien ne s’affiche.'));
+  drawPrev();
+  const lvl = h('select', {}, [['info', 'Information (vert)'], ['warn', 'Attention (jaune)'], ['danger', 'Urgent (rouge)']].map(([v, t]) => h('option', { value: v, selected: v === A.niveau }, t)));
+  lvl.addEventListener('change', () => { A.niveau = lvl.value; drawPrev(); });
+  const on = h('input', { type: 'checkbox', checked: A.actif }); on.addEventListener('change', () => { A.actif = on.checked; drawPrev(); });
+  const mon = h('input', { type: 'checkbox', checked: M.actif }); mon.addEventListener('change', () => { M.actif = mon.checked; });
+  return [
+    h('div', { class: 'card' }, h('h2', {}, 'Annonce sur l’accueil'), h('p', { class: 'sub' }, 'Un bandeau en haut de l’accueil, visible en quelques secondes par les éleveurs en ligne. Exemple : alerte Newcastle dans une zone, nouvelle fonctionnalité.'),
+      h('label', { class: 'switch' }, on, 'Afficher l’annonce'),
+      h('label', { class: 'f' }, 'Niveau'), lvl,
+      biField('Titre', A.titre, (l, v) => { A.titre[l] = v; drawPrev(); }),
+      biField('Texte', A.texte, (l, v) => { A.texte[l] = v; drawPrev(); }, { area: true }),
+      h('label', { class: 'f' }, 'Aperçu'), prev,
+      h('div', { class: 'actions' }, h('button', { class: 'btn', type: 'button', onclick: async () => { try { await setC('annonce', A); toast('Annonce enregistrée.'); } catch (e) { fail(e, 'Enregistrement'); } } }, 'Enregistrer'))),
+    h('div', { class: 'card' }, h('h2', {}, 'Mode maintenance'), h('p', { class: 'sub' }, 'Bloque l’application avec un message, pour une opération sur la base ou un incident. À utiliser rarement.'),
+      h('label', { class: 'switch' }, mon, 'Activer la maintenance'),
+      biField('Message', M.message, (l, v) => { M.message[l] = v; }, { area: true }),
+      h('div', { class: 'actions' }, h('button', { class: 'btn danger', type: 'button', onclick: async () => { try { await setC('maintenance', M); toast(M.actif ? 'Maintenance activée : l’application est bloquée.' : 'Maintenance désactivée.'); } catch (e) { fail(e, 'Enregistrement'); } } }, 'Enregistrer'))),
+  ];
+}
+
+/* ═════════════ Formules et codes ═════════════ */
+function genCode() {
+  const al = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', r = crypto.getRandomValues(new Uint8Array(8));
+  const c = [...r].map(x => al[x % al.length]).join('');
+  return `SIFA-${c.slice(0, 4)}-${c.slice(4)}`;
+}
+async function renderPlans() {
+  const F = Object.assign({ mensuelle: { prix: '', desc: bi() }, annuelle: { prix: '', desc: bi() }, paiement: bi() }, await getC('formules'));
+  for (const k of ['mensuelle', 'annuelle']) { F[k] = Object.assign({ prix: '', desc: bi() }, F[k]); F[k].desc = Object.assign(bi(), F[k].desc); }
+  F.paiement = Object.assign(bi(), F.paiement);
+  const plan = (k, title) => h('div', { class: 'item' }, h('h3', {}, title),
+    h('label', { class: 'f' }, 'Prix affiché (ex. 5 000 FCFA / mois)'), h('input', { type: 'text', value: F[k].prix, oninput: e => { F[k].prix = e.target.value; } }),
+    biField('Description', F[k].desc, (l, v) => { F[k].desc[l] = v; }));
+  const codesBox = h('div'); const qty = h('input', { type: 'number', min: 1, max: 20, value: 5, style: 'width:90px' });
+  const kind = h('select', {}, h('option', { value: 'mensuelle' }, 'Mensuelle'), h('option', { value: 'annuelle' }, 'Annuelle'));
+  async function loadCodes() {
+    const rows = await must(sb.from('codes_activation').select('*').order('cree_le', { ascending: false }).limit(60));
+    codesBox.replaceChildren(rows.length ? h('div', { class: 'tablewrap' }, h('table', {}, h('thead', {}, h('tr', {}, ['Code', 'Formule', 'Créé', 'État', ''].map(t => h('th', {}, t)))),
+      h('tbody', {}, rows.map(r => h('tr', {}, h('td', { class: 'mono' }, r.code), h('td', {}, r.formule), h('td', {}, fdate(r.cree_le)),
+        h('td', {}, r.utilise_par ? h('span', { class: 'pill' }, 'Utilisé ' + fdate(r.utilise_le)) : h('span', { class: 'pill ok' }, 'Disponible')),
+        h('td', {}, r.utilise_par ? '' : h('button', { class: 'btn small sec', type: 'button', onclick: async () => { try { await navigator.clipboard.writeText(r.code); toast('Code copié.'); } catch (_) { toast('Copie impossible : sélectionnez le code.', true); } } }, 'Copier'))))))) : h('p', { class: 'muted' }, 'Aucun code créé.'));
+  }
+  await loadCodes();
+  return [
+    h('div', { class: 'card' }, h('h2', {}, 'Formules et prix'), h('p', { class: 'sub' }, 'Ce que les éleveurs voient dans l’écran « Formules ». Les prix sont du texte libre.'),
+      h('div', { class: 'grid g2' }, plan('mensuelle', 'Formule mensuelle'), plan('annuelle', 'Formule annuelle')),
+      h('div', { style: 'margin-top:8px' }, biField('Comment payer (Mobile Money, numéro, étapes)', F.paiement, (l, v) => { F.paiement[l] = v; }, { area: true })),
+      h('div', { class: 'actions' }, h('button', { class: 'btn', type: 'button', onclick: async () => { try { await setC('formules', F); toast('Formules enregistrées.'); } catch (e) { fail(e, 'Enregistrement'); } } }, 'Enregistrer'))),
+    h('div', { class: 'card' }, h('h2', {}, 'Codes d’activation'), h('p', { class: 'sub' }, 'Après un paiement Mobile Money confirmé, créez un code et envoyez-le à l’éleveur. Il l’entre dans l’application (connexion Google nécessaire).'),
+      h('div', { class: 'actions', style: 'margin:0 0 14px' }, kind, h('span', {}, 'Nombre :'), qty,
+        h('button', { class: 'btn', type: 'button', onclick: async () => {
+          try { const n = Math.max(1, Math.min(20, +qty.value || 1)); const rows = Array.from({ length: n }, () => ({ code: genCode(), formule: kind.value, cree_par: S.me.id }));
+            await must(sb.from('codes_activation').insert(rows)); toast(n + ' code(s) créé(s).'); await loadCodes(); } catch (e) { fail(e, 'Création'); } } }, 'Créer des codes')),
+      codesBox),
+  ];
+}
+
+/* ═════════════ Pharmacies ═════════════ */
+const STOCKS = [['en_stock', 'En stock'], ['limite', 'Stock limité'], ['rupture', 'Rupture'], ['inconnu', 'Non renseigné']];
+async function renderPharmacies() {
+  let rows = await must(sb.from('pharmacies').select('*').order('ville').order('nom'));
+  const wrap = h('div'), formBox = h('div');
+  const blank = () => ({ nom: '', ville: 'Douala', quartier: '', adresse: '', telephone: '', horaires: '', latitude: '', longitude: '', stock: 'inconnu', actif: true });
+  function draw() {
+    wrap.replaceChildren(rows.length ? h('div', { class: 'tablewrap' }, h('table', {}, h('thead', {}, h('tr', {}, ['Pharmacie', 'Ville', 'Téléphone', 'Stock', 'Mis à jour', 'Visible', ''].map(t => h('th', {}, t)))),
+      h('tbody', {}, rows.map(p => {
+        const sel = h('select', { style: 'min-width:130px' }, STOCKS.map(([v, t]) => h('option', { value: v, selected: v === p.stock }, t)));
+        sel.addEventListener('change', async () => { try { const d = { stock: sel.value, stock_maj: new Date().toISOString() }; await must(sb.from('pharmacies').update(d).eq('id', p.id)); Object.assign(p, d); toast('Stock mis à jour.'); draw(); } catch (e) { fail(e, 'Mise à jour'); } });
+        const old = Date.now() - new Date(p.stock_maj) > 30 * 864e5;
+        return h('tr', {}, h('td', {}, h('b', {}, p.nom), h('div', { class: 'muted' }, [p.quartier, p.adresse].filter(Boolean).join(' · '))), h('td', {}, p.ville), h('td', {}, p.telephone || '—'), h('td', {}, sel),
+          h('td', {}, h('span', { class: 'pill ' + (old ? 'warn' : '') }, fdate(p.stock_maj))), h('td', {}, p.actif ? 'Oui' : 'Non'),
+          h('td', { style: 'white-space:nowrap' }, h('button', { class: 'btn small sec', type: 'button', onclick: () => edit(p) }, 'Modifier'), ' ', armed('Supprimer', async () => { try { await must(sb.from('pharmacies').delete().eq('id', p.id)); rows = rows.filter(x => x.id !== p.id); toast('Pharmacie supprimée.'); draw(); } catch (e) { fail(e, 'Suppression'); } })));
+      })))) : h('div', { class: 'empty' }, 'Aucune pharmacie. Tant que la liste est vide, l’application affiche l’exemple intégré, qui n’est pas réel.'));
+  }
+  function edit(p) {
+    const d = Object.assign(blank(), p || {}); const isNew = !p;
+    const inp = (k, label, type = 'text') => h('div', {}, h('label', { class: 'f' }, label), h('input', { type, value: d[k] ?? '', oninput: e => { d[k] = e.target.value; } }));
+    const paste = h('input', { type: 'text', placeholder: 'Collez ici « 4.0511, 9.7679 » copié depuis Google Maps' });
+    const lat = inp('latitude', 'Latitude'), lng = inp('longitude', 'Longitude');
+    paste.addEventListener('input', () => { const m = paste.value.match(/(-?\d+(?:[.,]\d+)?)\s*[,; ]\s*(-?\d+(?:[.,]\d+)?)/); if (m) { d.latitude = m[1].replace(',', '.'); d.longitude = m[2].replace(',', '.'); lat.querySelector('input').value = d.latitude; lng.querySelector('input').value = d.longitude; } });
+    const stock = h('select', {}, STOCKS.map(([v, t]) => h('option', { value: v, selected: v === d.stock }, t))); stock.addEventListener('change', () => { d.stock = stock.value; });
+    const act = h('input', { type: 'checkbox', checked: d.actif }); act.addEventListener('change', () => { d.actif = act.checked; });
+    formBox.replaceChildren(h('div', { class: 'card' }, h('h2', {}, isNew ? 'Ajouter une pharmacie' : 'Modifier : ' + p.nom),
+      h('div', { class: 'row2' }, inp('nom', 'Nom'), inp('ville', 'Ville'), inp('quartier', 'Quartier'), inp('adresse', 'Adresse'), inp('telephone', 'Téléphone (ex. +237 6 00 00 00 00)'), inp('horaires', 'Horaires (ex. Lun–Sam 8h–18h)')),
+      h('label', { class: 'f' }, 'Position : dans Google Maps, touchez longuement le lieu puis copiez les deux nombres'), paste,
+      h('div', { class: 'row2' }, lat, lng),
+      h('div', { class: 'row2' }, h('div', {}, h('label', { class: 'f' }, 'Stock'), stock), h('div', {}, h('label', { class: 'switch', style: 'margin-top:34px' }, act, 'Visible dans l’application'))),
+      h('div', { class: 'actions' }, h('button', { class: 'btn', type: 'button', onclick: async () => {
+        try {
+          const la = parseFloat(String(d.latitude).replace(',', '.')), lo = parseFloat(String(d.longitude).replace(',', '.'));
+          if (!d.nom.trim() || !d.ville.trim()) throw new Error('Le nom et la ville sont obligatoires.');
+          if (!(la >= -90 && la <= 90 && lo >= -180 && lo <= 180)) throw new Error('Position invalide : latitude entre -90 et 90, longitude entre -180 et 180.');
+          const rec = { nom: d.nom.trim(), ville: d.ville.trim(), quartier: (d.quartier || '').trim(), adresse: (d.adresse || '').trim(), telephone: (d.telephone || '').trim() || null, horaires: (d.horaires || '').trim(), latitude: la, longitude: lo, stock: d.stock, actif: d.actif };
+          if (isNew || rec.stock !== p.stock) rec.stock_maj = new Date().toISOString();
+          if (isNew) rows.push(await must(sb.from('pharmacies').insert(rec).select().single()));
+          else { const r = await must(sb.from('pharmacies').update(rec).eq('id', p.id).select().single()); rows = rows.map(x => x.id === p.id ? r : x); }
+          toast('Pharmacie enregistrée.'); formBox.replaceChildren(); draw();
+        } catch (e) { fail(e, 'Enregistrement'); } } }, 'Enregistrer'), h('button', { class: 'btn sec', type: 'button', onclick: () => formBox.replaceChildren() }, 'Annuler'))));
+    formBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  draw();
+  return [h('div', { class: 'card' }, h('h2', {}, 'Pharmacies vétérinaires'), h('p', { class: 'sub' }, 'La liste, la carte et le stock affichés aux éleveurs. Un changement apparaît en direct dans l’application.'),
+    h('div', { class: 'actions', style: 'margin:0 0 14px' }, h('button', { class: 'btn', type: 'button', onclick: () => edit(null) }, 'Ajouter une pharmacie')), wrap), formBox];
+}
+
+/* ═════════════ Fiches maladies ═════════════ */
+const EVID = [['', '—'], ['proven', 'Prouvé'], ['limited', 'Preuves limitées'], ['unproven', 'Non prouvé'], ['dangerous', 'Déconseillé / dangereux'], ['commonSense', 'Bon sens d’élevage']];
+const SHEET_PARTS = [
+  ['maintenant', 'À faire maintenant', 'lines'], ['reconnaitre', 'Comment reconnaître', 'items'], ['scientifique', 'Voie scientifique (vétérinaire)', 'items+ev'],
+  ['artisanal', 'Voie artisanale (traditionnelle)', 'items+ev'], ['prevention', 'Prévention', 'lines'], ['confusions', 'Maladies qui ressemblent', 'lines'],
+];
+let sheetSel = 'coccidiosis';
+async function renderSheets() {
+  const all = await getC('fiches');
+  const box = h('div');
+  function draw() {
+    const hasOverride = !!all[sheetSel];
+    const ed = JSON.parse(JSON.stringify(Object.assign({}, BASE[sheetSel], all[sheetSel] || {})));
+    ed.risque_humain = Object.assign(bi(), ed.risque_humain);
+    const tabs = h('div', { class: 'tabs' }, MALADIES.map(k => h('button', { class: 'btn small ' + (k === sheetSel ? '' : 'sec'), type: 'button', onclick: () => { sheetSel = k; draw(); } }, L.maladie[k])));
+    const parts = SHEET_PARTS.map(([key, title, kind]) => {
+      const list = h('div'); const arr = ed[key];
+      function drawList() {
+        list.replaceChildren(...arr.map((it, i) => {
+          const move = d => { const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; drawList(); };
+          const tools = h('div', { style: 'display:flex;gap:4px' }, h('button', { class: 'btn small sec', type: 'button', onclick: () => move(-1), 'aria-label': 'Monter' }, '↑'), h('button', { class: 'btn small sec', type: 'button', onclick: () => move(1), 'aria-label': 'Descendre' }, '↓'), armed('Retirer', () => { arr.splice(i, 1); drawList(); }));
+          if (kind === 'lines') return h('div', { class: 'item' }, h('div', { class: 'head' }, h('b', {}, '#' + (i + 1)), tools), biField('Phrase', it, (l, v) => { it[l] = v; }, { area: true }));
+          const ev = kind === 'items+ev' ? h('div', {}, h('label', { class: 'f' }, 'Niveau de preuve'), h('select', { onchange: e => { it.preuve = e.target.value || undefined; } }, EVID.map(([v, t]) => h('option', { value: v, selected: v === (it.preuve || '') }, t)))) : null;
+          return h('div', { class: 'item' }, h('div', { class: 'head' }, h('b', {}, '#' + (i + 1)), tools), biField('Titre', it.titre, (l, v) => { it.titre[l] = v; }), biField('Texte', it.texte, (l, v) => { it.texte[l] = v; }, { area: true }), ev);
+        }), h('button', { class: 'btn small sec', type: 'button', style: 'margin-top:10px', onclick: () => { arr.push(kind === 'lines' ? bi() : { titre: bi(), texte: bi() }); drawList(); } }, '+ Ajouter'));
+      }
+      drawList();
+      return h('div', { class: 'card' }, h('h2', {}, title), list);
+    });
+    box.replaceChildren(
+      h('div', { class: 'note', style: 'margin-bottom:14px' }, hasOverride ? 'Cette fiche est modifiée : les éleveurs voient votre version.' : 'Cette fiche affiche le texte intégré de l’application. Modifiez-le puis enregistrez : votre version remplace alors celle de l’application.'),
+      tabs, ...parts,
+      h('div', { class: 'card' }, h('h2', {}, 'Risque pour l’homme'), biField('Texte', ed.risque_humain, (l, v) => { ed.risque_humain[l] = v; }, { area: true })),
+      h('div', { class: 'actions' },
+        h('button', { class: 'btn', type: 'button', onclick: async () => {
+          try { const clean = JSON.parse(JSON.stringify(ed)); for (const [k, , kd] of SHEET_PARTS) clean[k] = clean[k].filter(x => kd === 'lines' ? (x.fr.trim() || x.en.trim()) : (x.titre.fr.trim() || x.texte.fr.trim()));
+            all[sheetSel] = clean; await setC('fiches', all); toast('Fiche enregistrée : visible dans l’application.'); draw(); } catch (e) { fail(e, 'Enregistrement'); } } }, 'Enregistrer cette fiche'),
+        hasOverride ? armed('Revenir au texte intégré', async () => { try { delete all[sheetSel]; await setC('fiches', all); toast('Texte intégré rétabli.'); draw(); } catch (e) { fail(e, 'Rétablissement'); } }, 'btn sec') : null));
+  }
+  draw();
+  return [h('div', { class: 'note warn', style: 'margin-bottom:14px' }, 'Ces fiches sont des conseils de santé. Toute modification doit être validée par le vétérinaire référent de SIFA avant publication.'), box];
+}
+
+/* ═════════════ Communauté ═════════════ */
+async function renderCommunity() {
+  const [pubs, sigs, groups] = await Promise.all([
+    must(sb.from('publications').select('id,groupe_id,auteur_id,titre,texte,masque,cree_le').order('cree_le', { ascending: false }).limit(60)),
+    must(sb.from('signalements').select('publication_id,commentaire_id,motif,cree_le').order('cree_le', { ascending: false }).limit(200)),
+    must(sb.from('groupes').select('id,nom')),
+  ]);
+  const ids = [...new Set(pubs.map(p => p.auteur_id))];
+  const authors = ids.length ? await must(sb.from('profiles').select('id,nom,email').in('id', ids)) : [];
+  const who = Object.fromEntries(authors.map(a => [a.id, a.nom || a.email || 'Éleveur']));
+  const gname = Object.fromEntries(groups.map(g => [g.id, g.nom]));
+  const count = {}; sigs.forEach(x => { if (x.publication_id) count[x.publication_id] = (count[x.publication_id] || 0) + 1; });
+  const motifs = {}; sigs.forEach(x => { if (x.publication_id && x.motif) (motifs[x.publication_id] ||= []).push(x.motif); });
+  let list = [...pubs].sort((a, b) => (count[b.id] || 0) - (count[a.id] || 0) || 0);
+  const body = h('div');
+  function draw() {
+    body.replaceChildren(list.length ? h('div', { class: 'tablewrap' }, h('table', {}, h('thead', {}, h('tr', {}, ['Publication', 'Groupe', 'Auteur', 'Date', 'Signalements', 'État', ''].map(t => h('th', {}, t)))),
+      h('tbody', {}, list.map(p => h('tr', {}, h('td', { style: 'max-width:340px' }, h('b', {}, p.titre), h('div', { class: 'muted' }, (p.texte || '').slice(0, 140)), motifs[p.id] ? h('div', { class: 'pill warn', style: 'margin-top:4px' }, 'Motif : ' + motifs[p.id][0]) : null),
+        h('td', {}, gname[p.groupe_id] || p.groupe_id), h('td', {}, who[p.auteur_id] || '—'), h('td', {}, fdate(p.cree_le)),
+        h('td', { class: 'num' }, count[p.id] ? h('span', { class: 'pill warn' }, count[p.id]) : '0'),
+        h('td', {}, p.masque ? h('span', { class: 'pill bad' }, 'Masquée') : h('span', { class: 'pill ok' }, 'Visible')),
+        h('td', { style: 'white-space:nowrap' }, h('button', { class: 'btn small sec', type: 'button', onclick: async () => { try { await must(sb.from('publications').update({ masque: !p.masque }).eq('id', p.id)); p.masque = !p.masque; draw(); toast(p.masque ? 'Publication masquée.' : 'Publication rétablie.'); } catch (e) { fail(e, 'Modération'); } } }, p.masque ? 'Rétablir' : 'Masquer'), ' ',
+          armed('Supprimer', async () => { try { await must(sb.from('publications').delete().eq('id', p.id)); list = list.filter(x => x.id !== p.id); draw(); toast('Publication supprimée.'); } catch (e) { fail(e, 'Suppression'); } }))))))) : h('div', { class: 'empty' }, 'Aucune publication pour le moment.'));
+  }
+  draw();
+  return h('div', { class: 'card' }, h('h2', {}, 'Publications'), h('p', { class: 'sub' }, `Les plus signalées d’abord. ${sigs.length} signalement(s) au total.`), body);
+}
+
+/* ═════════════ Utilisateurs ═════════════ */
+async function renderUsers() {
+  const [users, subs] = await Promise.all([
+    must(sb.from('profiles').select('id,nom,email,telephone,ville,ferme,type_elevage,role,created_at').order('created_at', { ascending: false }).limit(1000)),
+    must(sb.from('abonnements').select('user_id,formule,fin,statut').eq('statut', 'actif')),
+  ]);
+  const sub = Object.fromEntries(subs.map(x => [x.user_id, x]));
+  const q = h('input', { type: 'search', placeholder: 'Rechercher un nom, un e-mail, une ville…' }), body = h('div');
+  function draw() {
+    const t = q.value.trim().toLowerCase();
+    const rows = users.filter(u => !t || [u.nom, u.email, u.telephone, u.ville, u.ferme].some(x => (x || '').toLowerCase().includes(t)));
+    body.replaceChildren(h('p', { class: 'muted' }, `${nf(rows.length)} compte(s)`), h('div', { class: 'tablewrap' }, h('table', {}, h('thead', {}, h('tr', {}, ['Nom', 'Contact', 'Ville / ferme', 'Élevage', 'Formule', 'Rôle', 'Inscrit'].map(x => h('th', {}, x)))),
+      h('tbody', {}, rows.length ? rows.slice(0, 300).map(u => {
+        const sel = h('select', {}, ['eleveur', 'veterinaire', 'admin'].map(r => h('option', { value: r, selected: r === u.role }, r === 'eleveur' ? 'Éleveur' : r === 'veterinaire' ? 'Vétérinaire' : 'Administrateur')));
+        sel.addEventListener('change', async () => { if (u.id === S.me.id) { sel.value = u.role; return toast('Vous ne pouvez pas changer votre propre rôle.', true); } try { await must(sb.from('profiles').update({ role: sel.value }).eq('id', u.id)); u.role = sel.value; toast('Rôle modifié.'); } catch (e) { sel.value = u.role; fail(e, 'Modification'); } });
+        const s = sub[u.id];
+        return h('tr', {}, h('td', {}, h('b', {}, u.nom || '—')), h('td', {}, h('div', {}, u.email || ''), h('div', { class: 'muted' }, u.telephone || '')), h('td', {}, [u.ville, u.ferme].filter(Boolean).join(' · ') || '—'),
+          h('td', {}, u.type_elevage === 'chair' ? 'Chair' : u.type_elevage === 'pondeuse' ? 'Pondeuses' : 'Mixte'), h('td', {}, s ? h('span', { class: 'pill ok' }, s.formule) : h('span', { class: 'pill' }, 'Essai')), h('td', {}, sel), h('td', {}, fdate(u.created_at)));
+      }) : h('tr', {}, h('td', { colspan: 7, class: 'empty' }, 'Aucun compte.'))))));
+  }
+  q.addEventListener('input', draw); draw();
+  return h('div', { class: 'card' }, h('h2', {}, 'Comptes connectés'), h('p', { class: 'sub' }, 'Les éleveurs qui se sont connectés avec Google. Les autres utilisateurs sont comptés anonymement dans les statistiques.'), q, h('div', { style: 'margin-top:12px' }, body));
+}
+
+/* ═════════════ Modèle d'analyse ═════════════ */
+const pubUrl = f => `${URL_}/storage/v1/object/public/modeles/${f}?t=${Date.now()}`;
+const hex = async buf => [...new Uint8Array(await crypto.subtle.digest('SHA-256', buf))].map(b => b.toString(16).padStart(2, '0')).join('');
+async function renderModel() {
+  let cur = null;
+  try { const r = await fetch(pubUrl('manifest.json')); if (r.ok) cur = await r.json(); } catch (_) {}
+  const info = h('div'), hist = h('div'), check = h('div', { class: 'muted', style: 'margin-top:8px' }), gem = h('div', { style: 'margin-top:10px' });
+  let model = null, labels = null;
+  const bt = h('button', { class: 'btn', type: 'button', disabled: true }, 'Publier pour tous les téléphones');
+  const fM = h('input', { type: 'file', accept: '.tflite' }), fL = h('input', { type: 'file', accept: '.json' });
+  info.replaceChildren(cur ? h('p', {}, 'Version publiée : ', h('b', {}, cur.version), ` · ${(cur.taille / 1e6).toFixed(1)} Mo · étiquettes : ${cur.labels.join(', ')}`) : h('p', { class: 'muted' }, 'Aucun modèle publié : les téléphones utilisent celui livré dans l’application (version 1).'));
+  async function validate() {
+    bt.disabled = true; const out = [];
+    try {
+      if (fL.files[0]) { labels = JSON.parse(await fL.files[0].text()); if (!Array.isArray(labels) || !labels.every(x => typeof x === 'string')) throw new Error('labels.json doit être une liste de textes.');
+        const low = labels.join(' ').toLowerCase(); const miss = ['cocci', 'salmo', 'castle', 'health'].filter(k => !low.includes(k)); if (miss.length) throw new Error('Étiquettes manquantes : ' + miss.join(', ')); out.push('✔ Étiquettes : ' + labels.join(', ')); }
+      if (fM.files[0]) { model = await fM.files[0].arrayBuffer(); if (model.byteLength < 1e5 || model.byteLength > 6e7) throw new Error('Taille de modèle inattendue.'); out.push(`✔ Modèle : ${(model.byteLength / 1e6).toFixed(1)} Mo`); }
+      if (model && labels) { out.push(`→ sera publié en version ${(cur ? cur.version : 1) + 1}`); bt.disabled = false; }
+      check.className = 'muted'; check.replaceChildren(...out.flatMap(x => [x, h('br')]));
+    } catch (e) { check.className = 'note bad'; check.textContent = '✖ ' + e.message; }
+  }
+  fM.addEventListener('change', validate); fL.addEventListener('change', validate);
+  const up = async (path, body, type) => { const { error } = await sb.storage.from('modeles').upload(path, body, { upsert: true, contentType: type, cacheControl: '0' }); if (error) throw new Error(path + ' : ' + error.message); };
+  const publish = async m => { const txt = JSON.stringify(m, null, 2); await up(`manifest_v${m.version}.json`, new Blob([txt]), 'application/json'); await up('manifest.json', new Blob([txt]), 'application/json'); };
+  bt.addEventListener('click', async () => {
+    bt.disabled = true;
+    try { const v = (cur ? cur.version : 1) + 1, name = `sifa_v${v}.tflite`; await up(name, new Blob([model]), 'application/octet-stream');
+      await publish({ version: v, fichier: name, labels, sha256: await hex(model), taille: model.byteLength }); toast(`Version ${v} publiée.`); go('model'); }
+    catch (e) { fail(e, 'Publication'); validate(); }
+  });
+  const { data: files } = await sb.storage.from('modeles').list('', { limit: 200 });
+  const vs = (files || []).map(f => /^manifest_v(\d+)\.json$/.exec(f.name)).filter(Boolean).map(m => +m[1]).sort((a, b) => b - a);
+  hist.replaceChildren(vs.length ? vs.map(v => h('div', { class: 'todo', style: 'align-items:center' }, h('div', { style: 'flex:1' }, 'Version ' + v, cur && cur.version === v ? h('span', { class: 'pill ok', style: 'margin-left:8px' }, 'en ligne') : null),
+    armed('Remettre en ligne', async () => { try { const old = await (await fetch(pubUrl(`manifest_v${v}.json`))).json(); await publish({ ...old, version: (cur ? cur.version : 1) + 1 }); toast(`Contenu de la version ${v} republié.`); go('model'); } catch (e) { fail(e, 'Retour arrière'); } }, 'btn small sec'))) : h('p', { class: 'muted' }, 'Aucune version archivée.'));
+  const gbtn = h('button', { class: 'btn sec', type: 'button', onclick: async () => {
+    gem.className = 'muted'; gem.textContent = 'Test en cours…';
+    try { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); x.fillStyle = '#888'; x.fillRect(0, 0, 64, 64);
+      const img = c.toDataURL('image/jpeg', .9).split(',')[1].padEnd(200, 'A');
+      const r = await fetch(`${URL_}/functions/v1/verifier-fiente`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: KEY }, body: JSON.stringify({ image: img }) });
+      const j = await r.json().catch(() => ({}));
+      const msg = r.ok ? ['ok', '✔ Gemini répond : la fonction et la clé sont en place.'] : r.status === 404 ? ['bad', '✖ La fonction verifier-fiente n’est pas déployée.'] : r.status === 503 ? ['bad', '✖ GEMINI_API_KEY est absente des secrets Supabase.'] : r.status === 401 ? ['bad', '✖ SIFA_APP_KEY ne correspond pas à la clé publishable.'] : r.status === 429 ? ['warn', 'Quota gratuit Gemini atteint : l’app utilise le modèle embarqué seul.'] : ['bad', `✖ Erreur ${r.status} : ${j.erreur || 'voir les logs de la fonction'}`];
+      gem.className = 'note ' + msg[0]; gem.textContent = msg[1];
+    } catch (e) { gem.className = 'note bad'; gem.textContent = '✖ ' + e.message; } } }, 'Tester Gemini');
+  return [
+    h('div', { class: 'card' }, h('h2', {}, 'Publier un nouveau modèle'), h('p', { class: 'sub' }, 'Choisissez les deux fichiers sortis de l’entraînement Colab. Version, empreinte et manifeste sont gérés automatiquement ; les téléphones le récupèrent au prochain lancement en ligne.'), info,
+      h('label', { class: 'f' }, 'Fichier modèle (sifa_fp16.tflite)'), fM, h('label', { class: 'f' }, 'Fichier étiquettes (labels.json)'), fL, check, h('div', { class: 'actions' }, bt)),
+    h('div', { class: 'card' }, h('h2', {}, 'Anciennes versions'), hist),
+    h('div', { class: 'card' }, h('h2', {}, 'Vérification Gemini'), h('p', { class: 'sub' }, 'Contrôle que la fonction verifier-fiente est déployée et que la clé est enregistrée.'), gbtn, gem),
+  ];
+}
+
+/* ───────────── Démarrage et connexion ───────────── */
+async function enter(session) {
+  if (!session) { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); return; }
+  const { data: me } = await sb.from('profiles').select('id,role,email').eq('id', session.user.id).maybeSingle();
+  if (!me || me.role !== 'admin') {
+    $('app').classList.add('hidden'); $('login').classList.remove('hidden');
+    const m = $('loginMsg'); m.classList.remove('hidden'); m.replaceChildren('Ce compte n’est pas administrateur. Dans Supabase (SQL Editor), exécutez :', h('br'), h('code', { class: 'mono' }, `update public.profiles set role = 'admin' where id = '${session.user.id}';`));
+    await sb.auth.signOut(); return;
+  }
+  S.me = me; $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+  buildNav(); buildPeriod(); go(S.section);
+}
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault(); const b = $('btnLogin'); b.disabled = true; $('loginMsg').classList.add('hidden');
+  const { error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('pwd').value });
+  b.disabled = false;
+  if (error) { const m = $('loginMsg'); m.textContent = 'Connexion refusée : ' + error.message; m.classList.remove('hidden'); }
+});
+$('btnLogout').addEventListener('click', () => sb.auth.signOut());
+$('btnRefresh').addEventListener('click', () => go(S.section));
+sb.auth.onAuthStateChange((ev, session) => { if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT' || ev === 'INITIAL_SESSION') enter(session); });
+</script>
+</body>
+</html>

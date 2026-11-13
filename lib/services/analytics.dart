@@ -32,7 +32,6 @@ class Analytics with WidgetsBindingObserver {
   bool _enabled = true;
   File? _file;
   final List<Map<String, Object?>> _queue = [];
-  bool _flushing = false;
   DateTime? _lastOpen;
 
   bool get enabled => _enabled;
@@ -122,9 +121,15 @@ class Analytics with WidgetsBindingObserver {
     unawaited(flush());
   }
 
-  Future<void> flush() async {
-    if (_flushing || _queue.isEmpty || !_enabled) return;
-    _flushing = true;
+  Future<void>? _running;
+
+  /// Envoie la file ; si un envoi est déjà en cours, attend sa fin.
+  Future<void> flush() {
+    if (_queue.isEmpty || !_enabled) return _running ?? Future<void>.value();
+    return _running ??= _send().whenComplete(() => _running = null);
+  }
+
+  Future<void> _send() async {
     try {
       while (_queue.isNotEmpty) {
         final n = min(_batch, _queue.length);
@@ -153,8 +158,6 @@ class Analytics with WidgetsBindingObserver {
       }
     } catch (e) {
       debugPrint('Analytics hors connexion : $e');
-    } finally {
-      _flushing = false;
     }
   }
 }

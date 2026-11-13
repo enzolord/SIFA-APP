@@ -255,7 +255,7 @@ class _FeedbackCardState extends State<_FeedbackCard> {
                 'newcastle': 'Maladie de Newcastle',
                 'autre': 'Autre maladie',
                 'inconnue': 'Je ne sais pas',
-              }.entries)
+              }.entries.where((e) => e.key != widget.diagnosis.disease.name))
                 ActionChip(label: Tx(e.value), onPressed: () => _send(false, e.key)),
             ]),
           ],
