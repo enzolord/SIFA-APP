@@ -31,16 +31,44 @@ void main() {
       expect(r.redFlag, isFalse);
     });
 
-    test('un objet vert pris pour Newcastle est corrigé quand les oiseaux vont bien', () {
-      final r = Triage.combine(photo(n: 0.90, h: 0.06), {'none'});
-      expect(r.disease, isNot(Disease.newcastle));
+    test('un objet vert pris pour Newcastle : réponses « non » aux signes de Newcastle le corrigent', () {
+      final r = Triage.combine(photo(n: 0.90, h: 0.06), {'no:resp', 'no:nervous', 'no:death_fast', 'no:green'});
       expect(r.signsAgree, isFalse);
       expect(r.reliability, isNot(Reliability.high));
     });
 
+    test('questionnaire : s\'adapte à la photo et aux réponses', () {
+      final cocci = photo(c: 0.9, h: 0.05);
+      expect(Questionnaire.next(cocci, {})!.id, 'age');
+      expect(Questionnaire.next(cocci, {'age': 1})!.id, 'blood');
+      // Pas de question sur la ponte pour des jeunes, ni sur la tête sans signe respiratoire.
+      final ids = <String>[];
+      final answers = <String, int>{'age': 1};
+      for (var q = Questionnaire.next(cocci, answers); q != null; q = Questionnaire.next(cocci, answers)) {
+        ids.add(q.id);
+        answers[q.id] = q.options.length - 1; // « Je ne sais pas » / dernière option
+      }
+      expect(ids, isNot(contains('eggs')));
+      expect(ids, isNot(contains('head')));
+      expect(ids.length, lessThan(12));
+    });
+
+    test('questionnaire : des signes respiratoires ouvrent les questions Newcastle', () {
+      final nd = photo(n: 0.8, h: 0.1);
+      final a = <String, int>{'age': 2, 'resp': 0}; // adulte, signes respiratoires
+      expect(Questionnaire.signsOf(a), containsAll(['age_adult', 'resp']));
+      final ids = <String>[];
+      final answers = Map.of(a);
+      for (var q = Questionnaire.next(nd, answers); q != null; q = Questionnaire.next(nd, answers)) {
+        ids.add(q.id);
+        answers[q.id] = 0;
+      }
+      expect(ids, containsAll(['nervous', 'head', 'eggs', 'vacc']));
+    });
+
     test('les signes peuvent contredire la photo', () {
       // Photo « saine », mais sang dans les fientes chez des jeunes en boule.
-      final r = Triage.combine(photo(h: 0.80, c: 0.15), {'blood', 'age_young', 'huddle', 'anorexia'});
+      final r = Triage.combine(photo(h: 0.80, c: 0.15), {'blood', 'age_young', 'huddle'});
       expect(r.disease, Disease.coccidiosis);
       expect(r.signsAgree, isFalse);
       expect(r.reliability, isNot(Reliability.high));
@@ -151,7 +179,7 @@ void main() {
         kbPendingValidation,
         ...evidenceLabel.values,
         for (final i in diseaseInfo.values) ...[i.name, i.shortName],
-        for (final g in signGroups) ...[g.title, for (final s in g.signs) s.label],
+        for (final q in questionsById.values) ...[q.text, for (final o in q.options) o.label],
         for (final s in diseaseSheets.values) ...[
           for (final i in [...s.recognize, ...s.scientific, ...s.artisanal]) ...[i.title, i.body],
           ...s.now,

@@ -502,6 +502,8 @@ const Map<String, String> enStrings = {
   "Bronchite infectieuse, coryza, mycoplasmose : signes respiratoires.": "Infectious bronchitis, coryza, mycoplasmosis: respiratory signs.",
   "Un poulet qui ne mange plus fait des fientes vertes, quelle que soit la maladie.": "A chicken that stops eating passes green droppings, whatever the disease.",
   "Chez l'homme, ce virus peut donner une conjonctivite passagère. Lavez-vous les mains après avoir touché les poulets.": "In people, this virus can cause a passing conjunctivitis. Wash your hands after handling the chickens.",
+  "Quelques questions sur vos poulets rendent le résultat plus fiable.": "A few questions about your chickens make the result more reliable.",
+  "Voir le résultat maintenant": "See the result now",
   "Boivent-ils plus que d'habitude ?": "Are they drinking more than usual?",
   "Certains ont-ils la tête ou les yeux gonflés ?": "Do some have a swollen head or eyes?",
   "Certains ont-ils le cou tordu, des tremblements ou une paralysie ?": "Do some have a twisted neck, tremors or paralysis?",

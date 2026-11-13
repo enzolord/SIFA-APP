@@ -9,9 +9,9 @@ import '../services/triage.dart';
 import '../theme/colors.dart';
 import 'result_screen.dart';
 
-/// Après la photo : l'éleveur coche ce qu'il observe dans la bande.
-/// La photo seule ne suffit pas pour reconnaître une maladie ; ces signes
-/// corrigent ou confirment ce que le modèle a vu.
+/// Après la photo : quelques questions courtes, choisies selon la photo et les réponses
+/// déjà données (4 à 8 questions, pas une liste de 17 cases). La photo seule peut tromper ;
+/// les réponses la confirment ou la corrigent.
 class SignsScreen extends StatefulWidget {
   const SignsScreen({super.key, required this.photo, required this.photoProbs});
   final Uint8List photo;
@@ -22,30 +22,23 @@ class SignsScreen extends StatefulWidget {
 }
 
 class _SignsScreenState extends State<SignsScreen> {
-  final _chosen = <String>{};
+  /// id de question -> index de la réponse, dans l'ordre où elles ont été données.
+  final _answers = <String, int>{};
 
-  void _toggle(SignGroup group, Sign sign, bool on) {
-    setState(() {
-      if (!on) {
-        _chosen.remove(sign.id);
-        return;
-      }
-      if (sign.exclusive) {
-        // « Tout va bien » : on garde seulement l'âge et le vaccin.
-        _chosen.removeWhere((id) => !id.startsWith('age_') && id != 'vacc_nd');
-      } else {
-        _chosen.remove('none');
-      }
-      if (group.single) {
-        for (final s in group.signs) {
-          _chosen.remove(s.id);
-        }
-      }
-      _chosen.add(sign.id);
-    });
+  Question? get _current => Questionnaire.next(widget.photoProbs, _answers);
+
+  void _answer(Question q, int index) {
+    setState(() => _answers[q.id] = index);
+    if (Questionnaire.next(widget.photoProbs, _answers) == null) _finish();
   }
 
-  void _finish(Set<String> signs) {
+  void _back() {
+    if (_answers.isEmpty) return;
+    setState(() => _answers.remove(_answers.keys.last));
+  }
+
+  void _finish() {
+    final signs = Questionnaire.signsOf(_answers);
     final r = Triage.combine(widget.photoProbs, signs);
     final d = Diagnosis(
       disease: r.disease,
@@ -64,6 +57,7 @@ class _SignsScreenState extends State<SignsScreen> {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
+    final q = _current;
     return Scaffold(
       appBar: AppBar(title: const Tx('Signes observés')),
       body: ListView(
@@ -77,39 +71,34 @@ class _SignsScreenState extends State<SignsScreen> {
             const SizedBox(width: 14),
             Expanded(
               child: Tx(
-                'Cochez ce que vous voyez dans la bande. Une photo seule peut tromper : ces signes rendent le résultat plus fiable.',
+                'Quelques questions sur vos poulets rendent le résultat plus fiable.',
                 style: t.bodyLarge,
               ),
             ),
           ]),
-          const SizedBox(height: 8),
-          for (final g in signGroups) ...[
-            Padding(
-              padding: const EdgeInsets.only(top: 16, bottom: 4),
-              child: Tx(g.title, style: t.titleMedium),
-            ),
-            for (final s in g.signs)
-              CheckboxListTile(
-                value: _chosen.contains(s.id),
-                onChanged: (v) => _toggle(g, s, v ?? false),
-                title: Tx(s.label),
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                activeColor: SifaColors.brand,
+          const SizedBox(height: 20),
+          if (q != null) ...[
+            Tx(q.text, style: t.titleLarge),
+            const SizedBox(height: 12),
+            for (var i = 0; i < q.options.length; i++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(52),
+                    alignment: Alignment.centerLeft,
+                  ),
+                  onPressed: () => _answer(q, i),
+                  child: Tx(q.options[i].label),
+                ),
               ),
           ],
-          const SizedBox(height: 20),
-          FilledButton(
-            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(54)),
-            onPressed: () => _finish(Set.of(_chosen)),
-            child: const Tx('Voir le résultat'),
-          ),
           const SizedBox(height: 8),
-          TextButton(
-            onPressed: () => _finish(const {}),
-            child: const Tx('Passer cette étape'),
-          ),
+          Row(children: [
+            if (_answers.isNotEmpty) TextButton(onPressed: _back, child: const Tx('Retour')),
+            const Spacer(),
+            TextButton(onPressed: _finish, child: const Tx('Voir le résultat maintenant')),
+          ]),
         ],
       ),
     );
