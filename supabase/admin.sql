@@ -5,6 +5,14 @@
 -- (un administrateur est un profil dont role = 'admin').
 -- ============================================================
 
+-- 0. Définition de référence de is_admin() : un administrateur est un profil dont role = 'admin'.
+--    (Remplace une éventuelle ancienne version qui lisait une table « admins ».)
+create or replace function public.is_admin()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
+$$;
+grant execute on function public.is_admin() to public;  -- les règles de lecture (anon compris) l'appellent
+
 -- 1. Profils : e-mail et nom récupérés du compte Google (pour le tableau de bord)
 alter table public.profiles add column if not exists email text;
 
