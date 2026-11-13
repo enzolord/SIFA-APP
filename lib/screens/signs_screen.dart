@@ -6,7 +6,6 @@ import '../l10n/l10n.dart';
 import '../models/diagnosis.dart';
 import '../services/analysis_store.dart';
 import '../services/triage.dart';
-import '../theme/colors.dart';
 import 'result_screen.dart';
 
 /// Après la photo : quelques questions courtes, choisies selon la photo et les réponses
