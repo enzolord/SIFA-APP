@@ -9,6 +9,7 @@ class AnalysisStore extends ChangeNotifier {
   AnalysisStore._();
   static final instance = AnalysisStore._();
 
+  /// Remplacé par TfliteClassifier au démarrage (main.dart) ; le factice ne sert qu'aux tests.
   Classifier classifier = MockClassifier();
   Future<String?> Function(Uint8List bytes)? photoSaver;
 
@@ -44,12 +45,16 @@ class AnalysisStore extends ChangeNotifier {
       final path = j['photoPath'] as String?;
       final bytes = path == null ? null : await loader(path);
       if (bytes == null) continue;
+      final probs = (j['probs'] as List?)?.map((e) => (e as num).toDouble()).toList();
       _items.add(Diagnosis(
         disease: Disease.values[(j['disease'] as int).clamp(0, Disease.values.length - 1)],
         confidence: (j['confidence'] as num).toDouble(),
         photo: bytes,
         at: DateTime.parse(j['at'] as String),
         photoPath: path,
+        photoProbs: probs != null && probs.length == Disease.values.length ? probs : null,
+        signs: {for (final s in (j['signs'] as List? ?? const [])) s as String},
+        reliability: Reliability.values[(j['rel'] as int? ?? 1).clamp(0, Reliability.values.length - 1)],
       ));
     }
     notifyListeners();

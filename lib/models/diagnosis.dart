@@ -4,33 +4,25 @@ import '../widgets/status_chip.dart';
 
 enum Disease { healthy, coccidiosis, salmonella, newcastle }
 
+/// Fiabilité affichée à l'éleveur. La photo seule ne donne jamais « forte ».
+enum Reliability { high, medium, low }
+
 class DiseaseInfo {
-  const DiseaseInfo(this.name, this.status, this.advice);
+  const DiseaseInfo(this.name, this.shortName, this.status);
+
+  /// Libellé de l'hypothèse (« Coccidiose probable »).
   final String name;
+
+  /// Nom de la maladie seule (« Coccidiose »).
+  final String shortName;
   final SifaStatus status;
-  final List<String> advice;
 }
 
 const diseaseInfo = <Disease, DiseaseInfo>{
-  Disease.healthy: DiseaseInfo('Fiente saine', SifaStatus.ok, [
-    'Continuez la surveillance habituelle.',
-    "Vérifiez l'eau et l'aliment chaque jour.",
-  ]),
-  Disease.coccidiosis: DiseaseInfo('Coccidiose probable', SifaStatus.danger, [
-    'Isolez les sujets qui semblent atteints.',
-    "Gardez la litière sèche et propre.",
-    'Appelez votre vétérinaire : un traitement anticoccidien est nécessaire.',
-  ]),
-  Disease.salmonella: DiseaseInfo('Salmonellose probable', SifaStatus.danger, [
-    'Isolez les sujets malades et lavez-vous les mains après chaque contact.',
-    "Évitez de déplacer des animaux ou du matériel vers d'autres bâtiments.",
-    'Appelez votre vétérinaire rapidement.',
-  ]),
-  Disease.newcastle: DiseaseInfo('Maladie de Newcastle probable', SifaStatus.danger, [
-    'Isolez immédiatement la bande et limitez les visites.',
-    'Appelez votre vétérinaire ou les services vétérinaires : maladie à déclarer.',
-    'Ne vendez ni ne déplacez aucun oiseau.',
-  ]),
+  Disease.healthy: DiseaseInfo('Fiente saine', 'Fiente saine', SifaStatus.ok),
+  Disease.coccidiosis: DiseaseInfo('Coccidiose probable', 'Coccidiose', SifaStatus.danger),
+  Disease.salmonella: DiseaseInfo('Salmonellose probable', 'Salmonellose', SifaStatus.danger),
+  Disease.newcastle: DiseaseInfo('Maladie de Newcastle probable', 'Maladie de Newcastle', SifaStatus.danger),
 };
 
 class Diagnosis {
@@ -40,13 +32,26 @@ class Diagnosis {
     required this.photo,
     DateTime? at,
     this.photoPath,
-  }) : at = at ?? DateTime.now();
+    this.photoProbs,
+    Set<String>? signs,
+    this.reliability = Reliability.medium,
+  })  : at = at ?? DateTime.now(),
+        signs = signs ?? const {};
 
+  /// Hypothèse finale (photo + signes cochés).
   final Disease disease;
   final double confidence; // 0..1
   final Uint8List photo;
   final DateTime at;
   String? photoPath;
+
+  /// Probabilités données par la photo seule, dans l'ordre de [Disease.values].
+  /// Null pour les anciennes analyses enregistrées avant cette version.
+  final List<double>? photoProbs;
+
+  /// Identifiants des signes cochés par l'éleveur (voir services/triage.dart).
+  final Set<String> signs;
+  final Reliability reliability;
 
   DiseaseInfo get info => diseaseInfo[disease]!;
 
@@ -55,5 +60,8 @@ class Diagnosis {
         'confidence': confidence,
         'photoPath': photoPath,
         'at': at.toIso8601String(),
+        if (photoProbs != null) 'probs': photoProbs,
+        'signs': signs.toList(),
+        'rel': reliability.index,
       };
 }

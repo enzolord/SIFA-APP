@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/analysis_store.dart';
+import '../services/classifier.dart';
 import '../theme/colors.dart';
-import 'result_screen.dart';
+import 'signs_screen.dart';
 import '../l10n/l10n.dart';
 
 class ScanScreen extends StatefulWidget {
@@ -27,16 +28,23 @@ class _ScanScreenState extends State<ScanScreen> {
       final f = await _picker.pickImage(source: source, maxWidth: 1280, imageQuality: 90);
       if (f == null) return;
       final bytes = await f.readAsBytes();
-      final store = AnalysisStore.instance;
-      final d = await store.classifier.classify(bytes);
+      final outcome = await AnalysisStore.instance.classifier.analyze(bytes);
       if (!mounted) return;
-      if (d == null) {
-        setState(() => _message = 'Photo peu claire. Rapprochez-vous et reprenez-la en pleine lumière.');
+      final probs = outcome.probs;
+      if (probs == null) {
+        setState(() => _message = switch (outcome.issue) {
+              ScanIssue.tooDark => 'Photo trop sombre. Reprenez-la à la lumière du jour.',
+              ScanIssue.tooPlain =>
+                'Je ne vois pas de fiente sur cette photo. Cadrez une fiente fraîche, de près.',
+              ScanIssue.notDropping =>
+                'Cette photo ne montre pas une fiente. SIFA analyse uniquement les fientes de poule.',
+              ScanIssue.modelError => "L'analyse n'a pas pu démarrer. Fermez l'application et réessayez.",
+              _ => 'Photo peu claire. Rapprochez-vous et reprenez-la en pleine lumière.',
+            });
         return;
       }
-      store.add(d);
       await Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => ResultScreen(diagnosis: d)),
+        MaterialPageRoute<void>(builder: (_) => SignsScreen(photo: bytes, photoProbs: probs)),
       );
     } catch (_) {
       if (mounted) setState(() => _message = "Impossible d'ouvrir la photo. Réessayez.");
@@ -59,6 +67,9 @@ class _ScanScreenState extends State<ScanScreen> {
             style: t.titleMedium?.copyWith(color: Colors.white)),
         const SizedBox(height: 8),
         Tx('Lumière du jour, 20 à 30 cm, photo nette',
+            style: t.bodyMedium?.copyWith(color: Colors.white70)),
+        const SizedBox(height: 4),
+        Tx('Une seule fiente fraîche, qui remplit le cadre',
             style: t.bodyMedium?.copyWith(color: Colors.white70)),
         if (_message != null) ...[
           const SizedBox(height: 12),

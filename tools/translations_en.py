@@ -175,3 +175,8 @@ TEMPLATES = {
 "{0} Mo":"{0} MB",
 "{0} m":"{0} m","{0} km":"{0} km",
 }
+
+# Analyse et fiches maladies (fichier séparé pour rester lisible)
+from translations_en_sante import EN_SANTE, TEMPLATES_SANTE
+EN.update(EN_SANTE)
+TEMPLATES.update(TEMPLATES_SANTE)
