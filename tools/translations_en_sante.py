@@ -8,7 +8,7 @@ EN_SANTE = {
 "Une seule fiente fraîche, qui remplit le cadre":"One fresh dropping, filling the frame",
 "Photo trop sombre. Reprenez-la à la lumière du jour.":"Photo too dark. Take it again in daylight.",
 "Je ne vois pas de fiente sur cette photo. Cadrez une fiente fraîche, de près.":"I can't see a dropping in this photo. Frame a fresh dropping, close up.",
-"Cette photo ne montre pas une fiente. SIFA analyse uniquement les fientes de poule.":"This photo doesn't show a dropping. SIFA only analyses chicken droppings.",
+"Cette photo ne montre pas une fiente, ou elle est trop floue. SIFA analyse uniquement les fientes de poule.":"This photo doesn't show a dropping, or it is too blurry. SIFA only analyses chicken droppings.",
 "L'analyse n'a pas pu démarrer. Fermez l'application et réessayez.":"The analysis couldn't start. Close the app and try again.",
 # --- signes
 "Signes observés":"Signs observed",

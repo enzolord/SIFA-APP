@@ -37,7 +37,7 @@ class _ScanScreenState extends State<ScanScreen> {
               ScanIssue.tooPlain =>
                 'Je ne vois pas de fiente sur cette photo. Cadrez une fiente fraîche, de près.',
               ScanIssue.notDropping =>
-                'Cette photo ne montre pas une fiente. SIFA analyse uniquement les fientes de poule.',
+                'Cette photo ne montre pas une fiente, ou elle est trop floue. SIFA analyse uniquement les fientes de poule.',
               ScanIssue.modelError => "L'analyse n'a pas pu démarrer. Fermez l'application et réessayez.",
               _ => 'Photo peu claire. Rapprochez-vous et reprenez-la en pleine lumière.',
             });
