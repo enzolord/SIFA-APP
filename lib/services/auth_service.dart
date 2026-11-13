@@ -22,6 +22,13 @@ class AuthService extends ChangeNotifier {
     return (m?['full_name'] ?? m?['name'] ?? '') as String;
   }
 
+  /// Photo du compte Google (null si absente ou hors connexion).
+  String? get photoUrl {
+    final m = user?.userMetadata;
+    final u = (m?['avatar_url'] ?? m?['picture']) as String?;
+    return (u == null || u.isEmpty) ? null : u;
+  }
+
   Future<void> init() async {
     try {
       await Supabase.initialize(url: AppConfig.supabaseUrl, anonKey: AppConfig.supabaseKey);

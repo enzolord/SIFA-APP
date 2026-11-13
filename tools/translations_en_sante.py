@@ -200,6 +200,8 @@ EN_SANTE = {
 "Un poulet qui ne mange plus fait des fientes vertes, quelle que soit la maladie.":"A chicken that stops eating passes green droppings, whatever the disease.",
 "Chez l'homme, ce virus peut donner une conjonctivite passagère. Lavez-vous les mains après avoir touché les poulets.":"In people, this virus can cause a passing conjunctivitis. Wash your hands after handling the chickens.",
 # --- formulaire adaptatif
+'Non connecté':'Not signed in',
+'Se déconnecter':'Sign out',
 'Quelques questions sur vos poulets rendent le résultat plus fiable.':'A few questions about your chickens make the result more reliable.',
 'Voir le résultat maintenant':'See the result now',
 "Boivent-ils plus que d'habitude ?":'Are they drinking more than usual?',
