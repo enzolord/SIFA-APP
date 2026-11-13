@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SIFA Admin</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--ink:#1d2a1f;--mut:#667;--brand:#2e7d32;--bad:#b3261e;--line:#dde2d9}
+@media(prefers-color-scheme:dark){:root{--bg:#141a15;--card:#1d261f;--ink:#e8efe9;--mut:#9aa89c;--brand:#6fcf76;--bad:#ff8a80;--line:#2f3b31}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:16px}h1{font-size:22px}h2{font-size:17px;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0}
+label{display:block;margin:10px 0 4px;font-weight:600}input,button{font:inherit}
+input[type=text],input[type=email],input[type=password],input[type=number]{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+button{padding:11px 16px;border:0;border-radius:8px;background:var(--brand);color:#fff;font-weight:600;cursor:pointer;margin-top:12px}
+button.sec{background:transparent;color:var(--brand);border:1px solid var(--brand)}button:disabled{opacity:.5}
+.mut{color:var(--mut);font-size:14px}.ok{color:var(--brand)}.bad{color:var(--bad)}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
+code{background:var(--bg);padding:1px 5px;border-radius:4px;word-break:break-all}
+#log{white-space:pre-wrap;font-size:14px}
+</style></head><body><main>
+<h1>SIFA · Administration</h1>
+
+<div class="card" id="loginBox">
+  <h2>Connexion</h2>
+  <label>E-mail administrateur</label><input type="email" id="email" autocomplete="username">
+  <label>Mot de passe</label><input type="password" id="pwd" autocomplete="current-password">
+  <button id="btnLogin">Se connecter</button>
+  <p class="mut">Compte créé dans Supabase (Authentication → Users) puis ajouté à la table <code>admins</code>.</p>
+</div>
+
+<div id="app" hidden>
+  <div class="card"><h2>Modèle actuellement publié</h2><div id="current" class="mut">Chargement…</div>
+    <button class="sec" id="btnLogout">Se déconnecter</button></div>
+
+  <div class="card"><h2>Publier un nouveau modèle</h2>
+    <p class="mut">Choisissez les deux fichiers produits par l'entraînement Colab. Le numéro de version, l'empreinte et le manifeste sont gérés automatiquement.</p>
+    <label>Fichier modèle (<code>sifa_fp16.tflite</code>)</label><input type="file" id="fModel" accept=".tflite">
+    <label>Fichier étiquettes (<code>labels.json</code>)</label><input type="file" id="fLabels" accept=".json">
+    <div id="check" class="mut" style="margin-top:8px"></div>
+    <button id="btnPublish" disabled>Publier pour tous les téléphones</button>
+  </div>
+
+  <div class="card"><h2>Anciennes versions</h2><div id="history" class="mut">…</div></div>
+
+  <div class="card"><h2>Contrôle Gemini</h2>
+    <p class="mut">Vérifie que la fonction <code>verifier-fiente</code> est déployée et que <code>GEMINI_API_KEY</code> est bien enregistrée.</p>
+    <button class="sec" id="btnGemini">Tester</button><div id="gem" style="margin-top:8px"></div></div>
+
+  <div class="card"><h2>Journal</h2><div id="log" class="mut">—</div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const URL_='https://qprgpmmvdjrmslfsraae.supabase.co', KEY='sb_publishable_HfgFOYXWuyNAWrjDGWJjiA_7jSssFOK';
+const sb=supabase.createClient(URL_,KEY), B='modeles', $=id=>document.getElementById(id);
+const pub=f=>`${URL_}/storage/v1/object/public/${B}/${f}?t=${Date.now()}`;
+let cur=null, model=null, labels=null;
+const log=(m,c)=>{const l=$('log');l.className=c||'mut';l.textContent=m};
+const hex=async buf=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',buf))].map(b=>b.toString(16).padStart(2,'0')).join('');
+
+async function loadCurrent(){
+  try{const r=await fetch(pub('manifest.json'));
+    if(!r.ok){cur=null;$('current').textContent='Aucun modèle publié : les téléphones utilisent celui livré dans l\'app (version 1).';}
+    else{cur=await r.json();$('current').innerHTML=`Version <b>${cur.version}</b> · ${(cur.taille/1e6).toFixed(1)} Mo<br>Étiquettes : ${cur.labels.join(', ')}`;}
+  }catch(e){$('current').textContent='Lecture impossible : '+e.message}
+  await loadHistory(); validate();
+}
+async function loadHistory(){
+  const {data,error}=await sb.storage.from(B).list('',{limit:200});
+  if(error){$('history').textContent=error.message;return}
+  const vs=(data||[]).map(f=>/^manifest_v(\d+)\.json$/.exec(f.name)).filter(Boolean).map(m=>+m[1]).sort((a,b)=>b-a);
+  $('history').innerHTML=vs.length?'':'Aucune version archivée.';
+  for(const v of vs){const d=document.createElement('div');d.className='row';
+    d.innerHTML=`<span>Version ${v}${cur&&cur.version===v?' (en ligne)':''}</span>`;
+    const b=document.createElement('button');b.className='sec';b.style.margin=0;b.textContent='Remettre en ligne';
+    b.onclick=()=>rollback(v);d.appendChild(b);$('history').appendChild(d);}
+}
+async function validate(){
+  $('btnPublish').disabled=true;const out=[];
+  try{
+    if($('fLabels').files[0]){labels=JSON.parse(await $('fLabels').files[0].text());
+      if(!Array.isArray(labels)||!labels.every(x=>typeof x==='string'))throw Error('labels.json doit être une liste de textes');
+      const low=labels.join(' ').toLowerCase();
+      const miss=['cocci','salmo','castle','health'].filter(k=>!low.includes(k));
+      if(miss.length)throw Error('Étiquettes manquantes : '+miss.join(', '));
+      out.push('✔ Étiquettes : '+labels.join(', '));}
+    if($('fModel').files[0]){model=await $('fModel').files[0].arrayBuffer();
+      if(model.byteLength<1e5||model.byteLength>6e7)throw Error('Taille de modèle inattendue');
+      out.push(`✔ Modèle : ${(model.byteLength/1e6).toFixed(1)} Mo`);}
+    if(model&&labels){out.push(`→ sera publié en version ${(cur?cur.version:1)+1}`);$('btnPublish').disabled=false;}
+    $('check').className='mut';$('check').innerHTML=out.join('<br>');
+  }catch(e){$('check').className='bad';$('check').textContent='✖ '+e.message}
+}
+async function up(path,body,type){
+  const {error}=await sb.storage.from(B).upload(path,body,{upsert:true,contentType:type,cacheControl:'0'});
+  if(error)throw Error(path+' : '+error.message);
+}
+async function publishManifest(m){
+  const txt=JSON.stringify(m,null,2);
+  await up(`manifest_v${m.version}.json`,new Blob([txt]),'application/json');
+  await up('manifest.json',new Blob([txt]),'application/json');
+}
+$('btnPublish').onclick=async()=>{
+  $('btnPublish').disabled=true;
+  try{
+    const v=(cur?cur.version:1)+1,name=`sifa_v${v}.tflite`;
+    log('Envoi du modèle…');await up(name,new Blob([model]),'application/octet-stream');
+    const m={version:v,fichier:name,labels,sha256:await hex(model),taille:model.byteLength};
+    log('Publication du manifeste…');await publishManifest(m);
+    log(`✔ Version ${v} publiée. Les téléphones la récupèrent au prochain lancement avec Internet.`,'ok');
+    $('fModel').value='';$('fLabels').value='';model=labels=null;await loadCurrent();
+  }catch(e){log('✖ '+e.message+'\n(Si « row-level security » : votre compte n\'est pas dans la table admins.)','bad');validate()}
+};
+async function rollback(v){
+  if(!confirm(`Remettre la version ${v} en ligne ?`))return;
+  try{const r=await fetch(pub(`manifest_v${v}.json`));const old=await r.json();
+    const nv=(cur?cur.version:1)+1;
+    await publishManifest({...old,version:nv});
+    log(`✔ Le contenu de la version ${v} est republié sous le numéro ${nv} (les téléphones n'installent que des numéros plus grands).`,'ok');
+    await loadCurrent();
+  }catch(e){log('✖ '+e.message,'bad')}
+}
+$('btnGemini').onclick=async()=>{
+  const g=$('gem');g.className='mut';g.textContent='Test en cours…';
+  try{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');x.fillStyle='#888';x.fillRect(0,0,64,64);
+    const img=c.toDataURL('image/jpeg',.9).split(',')[1].padEnd(200,'A');
+    const r=await fetch(`${URL_}/functions/v1/verifier-fiente`,{method:'POST',headers:{'Content-Type':'application/json',apikey:KEY},body:JSON.stringify({image:img})});
+    const j=await r.json().catch(()=>({}));
+    if(r.ok){g.className='ok';g.textContent='✔ Gemini répond (fonction et clé en place).'}
+    else if(r.status===404){g.className='bad';g.textContent='✖ Fonction verifier-fiente non déployée.'}
+    else if(r.status===503){g.className='bad';g.textContent='✖ GEMINI_API_KEY absente des secrets Supabase.'}
+    else if(r.status===401){g.className='bad';g.textContent='✖ SIFA_APP_KEY ne correspond pas à la clé publishable.'}
+    else{g.className='bad';g.textContent=`✖ Erreur ${r.status} : ${j.erreur||'voir les logs de la fonction'}`}
+  }catch(e){g.className='bad';g.textContent='✖ '+e.message}
+};
+$('fModel').onchange=$('fLabels').onchange=validate;
+async function show(session){
+  $('loginBox').hidden=!!session;$('app').hidden=!session;if(session)loadCurrent();
+}
+$('btnLogin').onclick=async()=>{
+  const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('pwd').value});
+  if(error)alert('Connexion refusée : '+error.message);
+};
+$('btnLogout').onclick=()=>sb.auth.signOut();
+sb.auth.onAuthStateChange((_e,s)=>show(s));
+sb.auth.getSession().then(({data})=>show(data.session));
+</script></main></body></html>
