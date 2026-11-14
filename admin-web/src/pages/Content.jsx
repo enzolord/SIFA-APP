@@ -3,10 +3,11 @@ import { Route, Routes } from 'react-router-dom';
 import { Armed, Async, BiField, Card, Grid, Note, Pill, SubTabs, bi, useAsync, useToast } from '../ui.jsx';
 import { MALADIES, L, fdate, genCode, getC, must, sb, setC } from '../lib.js';
 import { useSession } from '../session.jsx';
+import Promo from './Promo.jsx';
 import BASE from '../data/fichesBase.json';
 import { catalogue, packPrice, fcfa, offers, PACKS, TIERS, DEFAULT_TARIFS } from '../pricing.js';
 
-const TABS = [['/contenu', 'Annonce et maintenance', true], ['/contenu/tarifs', 'Tarifs'], ['/contenu/formules', 'Codes et paiement'], ['/contenu/pharmacies', 'Pharmacies'], ['/contenu/fiches', 'Fiches maladies']];
+const TABS = [['/contenu', 'Annonce et maintenance', true], ['/contenu/tarifs', 'Tarifs'], ['/contenu/promo', 'Codes promo'], ['/contenu/formules', 'Paiement'], ['/contenu/pharmacies', 'Pharmacies'], ['/contenu/fiches', 'Fiches maladies']];
 const clone = o => JSON.parse(JSON.stringify(o));
 
 function Announce() {
@@ -39,28 +40,10 @@ function AnnounceForm({ init, toast }) {
 
 function Plans() {
   const toast = useToast();
-  const { me } = useSession();
   const st = useAsync(() => getC('formules'), []);
-  const codes = useAsync(() => must(sb.from('codes_activation').select('*').order('cree_le', { ascending: false }).limit(60)), []);
-  const tar = useAsync(() => getC('tarifs'), []);
-  const [qty, setQty] = useState(5); const [kind, setKind] = useState('analyse_solo'); const [months, setMonths] = useState(1);
   return <>
+    <Note style={{ marginBottom: 14 }}>Les codes d’activation et de réduction se créent maintenant dans l’onglet <b>Codes promo</b>.</Note>
     <Async state={st}>{init => <PlansForm init={init} toast={toast} />}</Async>
-    <Card title="Codes d’activation" sub="Après un paiement Mobile Money confirmé, créez un code et envoyez-le à l’éleveur. Il l’entre dans l’application (connexion Google nécessaire).">
-      <div className="actions" style={{ margin: '0 0 14px' }}>
-        <select value={kind} onChange={e => setKind(e.target.value)} style={{ width: 'auto', maxWidth: '100%' }}>{offers(tar.data || {}).map(o => <option key={o.id} value={o.id}>{o.label} · {fcfa(o.price)}/mois</option>)}</select>
-        <span>Durée :</span><select value={months} onChange={e => setMonths(+e.target.value)} style={{ width: 'auto' }}>{[1, 3, 6, 12].map(m => <option key={m} value={m}>{m} mois</option>)}</select>
-        <span>Nombre :</span><input type="number" min="1" max="20" value={qty} onChange={e => setQty(e.target.value)} style={{ width: 90 }} />
-        <button className="btn" type="button" onClick={async () => {
-          try { const n = Math.max(1, Math.min(20, +qty || 1)); await must(sb.from('codes_activation').insert(Array.from({ length: n }, () => ({ code: genCode(), formule: kind, duree_mois: months, cree_par: me.id })))); toast(n + ' code(s) créé(s).'); codes.reload(); }
-          catch (e) { toast('Création : ' + e.message, true); }
-        }}>Créer des codes</button>
-      </div>
-      <Async state={codes}>{rows => rows.length ? <div className="tablewrap"><table><thead><tr>{['Code', 'Offre', 'Durée', 'Créé', 'État', ''].map(t => <th key={t}>{t}</th>)}</tr></thead>
-        <tbody>{rows.map(r => <tr key={r.code}><td className="mono">{r.code}</td><td>{offers(tar.data || {}).find(o => o.id === r.formule)?.label || r.formule}</td><td>{r.duree_mois ?? 1} mois</td><td>{fdate(r.cree_le)}</td>
-          <td>{r.utilise_par ? <Pill>Utilisé {fdate(r.utilise_le)}</Pill> : <Pill tone="ok">Disponible</Pill>}</td>
-          <td>{!r.utilise_par && <button className="btn small sec" type="button" onClick={async () => { try { await navigator.clipboard.writeText(r.code); toast('Code copié.'); } catch { toast('Copie impossible : sélectionnez le code.', true); } }}>Copier</button>}</td></tr>)}</tbody></table></div> : <p className="muted">Aucun code créé.</p>}</Async>
-    </Card>
   </>;
 }
 function PlansForm({ init, toast }) {
@@ -220,6 +203,6 @@ function SheetsEditor({ all, reload }) {
 
 export default function Content() {
   return <><SubTabs items={TABS} /><Routes>
-    <Route index element={<Announce />} /><Route path="tarifs" element={<Tarifs />} /><Route path="formules" element={<Plans />} /><Route path="pharmacies" element={<Pharmacies />} /><Route path="fiches" element={<Sheets />} />
+    <Route index element={<Announce />} /><Route path="tarifs" element={<Tarifs />} /><Route path="promo" element={<Promo />} /><Route path="formules" element={<Plans />} /><Route path="pharmacies" element={<Pharmacies />} /><Route path="fiches" element={<Sheets />} />
   </Routes></>;
 }

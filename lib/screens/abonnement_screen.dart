@@ -26,10 +26,49 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
   @override
   void dispose() {
     _code.dispose();
+    _promo.dispose();
     super.dispose();
   }
 
   bool _busy = false;
+
+  // Code de réduction appliqué (pourcentage) : il ne change que le prix affiché.
+  final _promo = TextEditingController();
+  int _discount = 0;
+  String _promoCode = '';
+  String? _promoMsg;
+
+  Future<void> _applyPromo() async {
+    final code = _promo.text.trim().toUpperCase();
+    if (code.isEmpty) return;
+    final client = AuthService.instance.client;
+    if (client == null) {
+      setState(() => _promoMsg = 'Connexion impossible pour le moment. Vérifiez votre réseau.');
+      return;
+    }
+    try {
+      final rows = await client.rpc('verifier_promo', params: {'p_code': code});
+      final list = rows is List ? rows : const [];
+      if (!mounted) return;
+      if (list.isEmpty) {
+        setState(() {
+          _discount = 0;
+          _promoCode = '';
+          _promoMsg = 'Code de réduction invalide ou expiré.';
+        });
+        return;
+      }
+      final pct = ((list.first as Map)['reduction'] as num).round().clamp(1, 100);
+      Analytics.instance.track('promo_applique', {'code': code, 'offre': _choice});
+      setState(() {
+        _discount = pct;
+        _promoCode = code;
+        _promoMsg = null;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _promoMsg = 'Connexion impossible pour le moment. Vérifiez votre réseau.');
+    }
+  }
 
   /// Active le code saisi sur le serveur (fonction activer_code, réservée aux comptes connectés).
   Future<void> _activate() async {
@@ -66,6 +105,8 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
   Widget build(BuildContext context) {
     return ListenableBuilder(listenable: Listenable.merge([RemoteContent.instance, Entitlement.instance]), builder: (context, _) => _page(context, Theme.of(context).textTheme));
   }
+
+  String _p(int v) => fcfa(discounted(v, _discount));
 
   Pricing get _pricing => Pricing.fromRemote(RemoteContent.instance.section('tarifs'));
 
@@ -152,8 +193,8 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
             line: a.accountsAndMore
                 ? trf('{0} comptes et plus · {1} analyses par mois', [a.accounts, a.analyses])
                 : trf(a.accounts == 1 ? '{0} compte · {1} analyses par mois' : '{0} comptes · {1} analyses par mois', [a.accounts, a.analyses]),
-            price: fcfa(a.price),
-            sub: trf('Soit {0} par analyse', [fcfa(a.pricePerAnalysis)]),
+            price: _p(a.price),
+            sub: trf('Soit {0} par analyse', [fcfa((discounted(a.price, _discount) / a.analyses).round())]),
           ),
         Card(
           child: Padding(
@@ -186,7 +227,7 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
             id: x.id,
             name: x.name,
             line: _range(x),
-            price: x.onQuote ? tr('Sur devis') : fcfa(x.price!),
+            price: x.onQuote ? tr('Sur devis') : _p(x.price!),
             onQuote: x.onQuote,
             enabled: p.farmManagementAvailable && !x.onQuote,
           ),
@@ -240,8 +281,8 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
           id: d.id,
           name: trf('Pack {0} + {1}', [a.name.replaceFirst('Analyse ', ''), g.name]),
           line: trf('Au lieu de {0}', [fcfa(d.sum)]),
-          price: fcfa(d.price),
-          sub: trf('Vous économisez {0} par mois', [fcfa(d.saving)]),
+          price: _p(d.price),
+          sub: trf('Vous économisez {0} par mois', [fcfa(d.sum - discounted(d.price, _discount))]),
           enabled: p.farmManagementAvailable,
         ),
       const SizedBox(height: 4),
@@ -298,12 +339,32 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
                 child: Row(children: [
                   const Icon(Icons.check_circle_rounded, color: SifaColors.brand),
                   const SizedBox(width: 10),
-                  Expanded(child: Text(trf('Votre choix : {0}, {1} par mois', [chosen.$1, fcfa(chosen.$2 ?? 0)]), style: t.titleSmall)),
+                  Expanded(child: Text(trf('Votre choix : {0}, {1} par mois', [chosen.$1, fcfa(discounted(chosen.$2 ?? 0, _discount))]), style: t.titleSmall)),
                 ]),
               ),
             ),
             const SizedBox(height: 16),
           ],
+          Tx('Code de réduction', style: t.titleMedium),
+          const SizedBox(height: 8),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(
+              child: TextField(
+                controller: _promo,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(labelText: tr('Code promo'), border: const OutlineInputBorder()),
+              ),
+            ),
+            const SizedBox(width: 10),
+            FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(0, 56)), onPressed: _applyPromo, child: const Tx('Appliquer')),
+          ]),
+          if (_discount > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(trf('Code {0} appliqué : −{1} % sur les prix affichés.', [_promoCode, _discount]), style: t.bodyMedium?.copyWith(color: SifaColors.ok, fontWeight: FontWeight.w600)),
+            ),
+          if (_promoMsg != null) Padding(padding: const EdgeInsets.only(top: 8), child: Tx(_promoMsg!, style: t.bodyMedium?.copyWith(color: SifaColors.warn))),
+          const SizedBox(height: 20),
           Tx('Comment payer', style: t.titleMedium),
           const SizedBox(height: 8),
           if (pay.isNotEmpty)
@@ -314,12 +375,12 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
                 '3. Vous recevez un code et l\'entrez ci-dessous.'),
           if (chosen != null) ...[
             const SizedBox(height: 8),
-            Text(trf('Indiquez en référence : {0}', [chosen.$1]), style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+            Text(trf('Indiquez en référence : {0}', [_promoCode.isEmpty ? chosen.$1 : '${chosen.$1} + $_promoCode']), style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
           ],
           const SizedBox(height: 16),
           TextField(
             controller: _code,
-            decoration: InputDecoration(labelText: tr("Code d'activation"), border: const OutlineInputBorder()),
+            decoration: InputDecoration(labelText: tr("Code d'activation ou code d'accès"), border: const OutlineInputBorder()),
           ),
           if (_msg != null) ...[
             const SizedBox(height: 8),

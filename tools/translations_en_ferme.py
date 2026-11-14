@@ -11,6 +11,10 @@ EN_FERME = {
 "Analyses gratuites restantes : {0} sur {1}":"Free analyses left: {0} of {1}",
 "Analyses restantes ce mois : {0} sur {1}":"Analyses left this month: {0} of {1}",
 "Vous avez fait vos {0} analyses offertes. Choisissez une formule pour continuer à analyser les fientes de vos poulets.":"You have used your {0} free analyses. Choose a plan to keep analysing your chickens' droppings.",
+# --- codes promo
+"Code de réduction":"Discount code","Code promo":"Promo code","Appliquer":"Apply",
+"Code d'activation ou code d'accès":"Activation or access code",
+"Code de réduction invalide ou expiré.":"Discount code invalid or expired.",
 # --- gestion de ferme
 "La gestion de ferme est incluse dans les formules Gestion et Pack complet.":"Farm management is included in the Management and Complete pack plans.",
 "Poules mortes":"Dead hens","Œufs ramassés":"Eggs collected","Dont cassés ou déclassés":"Of which cracked or downgraded","œufs":"eggs",
@@ -41,6 +45,7 @@ EN_FERME = {
 "Glissez vers la gauche pour supprimer une ligne. Le délai d'attente est celui de la notice du produit ; en cas de doute, demandez à un vétérinaire.":"Swipe left to delete a line. The withdrawal period is the one on the product leaflet; if in doubt, ask a vet.",
 }
 TEMPLATES_FERME = {
+"Code {0} appliqué : −{1} % sur les prix affichés.":"Code {0} applied: −{1} % on the prices shown.",
 "{0} achats":"{0} purchases","{0} clients":"{0} customers",
 "Soit {0} FCFA par oiseau vivant":"That is {0} FCFA per live bird",
 "Aliment : {0} kg":"Feed: {0} kg","Indice de consommation : {0}":"Feed conversion ratio: {0}",

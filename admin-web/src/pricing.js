@@ -32,5 +32,11 @@ export function offers(tarifs) {
   for (const p of packs) for (const t of tiers) { const pr = packPrice(p, t, discount); if (pr != null) out.push({ id: `pack_${p.key}_${t.n}`, label: `Pack ${p.name.replace('Analyse ', '')} + ${t.name}`, price: pr }); }
   return out;
 }
-export const legacyLabel = { mensuelle: 'Mensuelle (ancienne)', annuelle: 'Annuelle (ancienne)', essai: 'Essai' };
+/** Codes d'accès libres : donnent l'accès sans palier ni quota. */
+export const PROMO_ACCESS = [
+  { id: 'promo_analyse', label: 'Accès analyse seule (illimité)' },
+  { id: 'promo_gestion', label: 'Accès gestion de ferme seule' },
+  { id: 'promo_complet', label: 'Accès analyse + gestion' },
+];
+export const legacyLabel = { mensuelle: 'Mensuelle (ancienne)', annuelle: 'Annuelle (ancienne)', essai: 'Essai', ...Object.fromEntries(PROMO_ACCESS.map(a => [a.id, a.label])) };
 export const fcfa = n => (n == null ? 'Sur devis' : Math.round(n).toLocaleString('fr-FR') + ' FCFA');

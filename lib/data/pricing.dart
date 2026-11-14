@@ -163,6 +163,9 @@ class Pricing {
   }
 }
 
+/// Prix après un code de réduction de [pct] %, arrondi aux 50 FCFA au-dessus (comme le pack complet).
+int discounted(int price, int pct) => pct <= 0 ? price : (price * (100 - pct.clamp(0, 100)) / 100 / 50).ceil() * 50;
+
 /// 12500 -> « 12 500 FCFA » (espace insécable fine).
 String fcfa(int v) {
   final s = v.toString();

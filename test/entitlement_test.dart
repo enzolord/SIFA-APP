@@ -97,4 +97,18 @@ void main() {
     expect(e.offerId, 'analyse_solo');
     expect(e.used, 7);
   });
+
+  test("codes d'accès : analyse seule, gestion seule, les deux", () {
+    e.pricing = () => sold;
+    e.debugReset(offer: 'promo_analyse', since: DateTime(2026, 11, 1), until: DateTime(2027, 1, 1));
+    expect(e.limit, isNull);
+    expect(e.farmAccess, isFalse);
+    e.debugReset(offer: 'promo_gestion', since: DateTime(2026, 11, 1), until: DateTime(2027, 1, 1));
+    expect(e.limit, 5); // pas d'analyses en plus de l'essai
+    expect(e.farmAccess, isTrue);
+    expect(e.farmTier, isNull); // aucune limite de sujets
+    e.debugReset(offer: 'promo_complet', since: DateTime(2026, 11, 1), until: DateTime(2027, 1, 1));
+    expect(e.limit, isNull);
+    expect(e.farmAccess, isTrue);
+  });
 }

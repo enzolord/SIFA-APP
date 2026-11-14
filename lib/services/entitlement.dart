@@ -39,7 +39,7 @@ class Entitlement extends ChangeNotifier {
   int get _analysisAllowance {
     final id = _activeOffer;
     if (id == null) return -1;
-    if (id == 'mensuelle' || id == 'annuelle') return 0;
+    if (id == 'mensuelle' || id == 'annuelle' || id == 'promo_analyse' || id == 'promo_complet') return 0;
     final p = pricing();
     String? key;
     if (id.startsWith('analyse_')) {
@@ -91,11 +91,11 @@ class Entitlement extends ChangeNotifier {
   }
 
   /// Gestion de ferme : ouverte à tous tant que l'administration ne l'a pas mise en vente ;
-  /// ensuite réservée aux formules Gestion et Pack complet.
+  /// ensuite réservée aux formules Gestion, Pack complet et aux codes d'accès gestion ou complet.
   bool get farmAccess {
     if (!pricing().farmManagementAvailable) return true;
     final id = _activeOffer;
-    return id != null && (id.startsWith('gestion_') || id.startsWith('pack_'));
+    return id != null && (id.startsWith('gestion_') || id.startsWith('pack_') || id == 'promo_gestion' || id == 'promo_complet');
   }
 
   /// Niveau de gestion de l'abonnement (1 à 7), null sans formule de gestion.

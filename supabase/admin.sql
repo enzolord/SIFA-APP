@@ -330,6 +330,39 @@ $$;
 revoke all on function public.mon_abonnement() from public, anon;
 grant execute on function public.mon_abonnement() to authenticated;
 
+-- 6c. Codes promo
+--   a) Codes d'accès (table codes_activation) : formules « promo_analyse » (analyses illimitées),
+--      « promo_gestion » (gestion de ferme sans limite de sujets), « promo_complet » (les deux),
+--      ou n'importe quelle formule précise (analyse_pro, gestion_3, pack_pro_4...).
+--   b) Codes de réduction (table codes_promo) : un pourcentage appliqué au prix affiché dans l'application.
+create table if not exists public.codes_promo (
+  code       text primary key check (code ~ '^[A-Z0-9-]{3,24}$'),
+  reduction  int  not null check (reduction between 1 and 100),
+  actif      boolean not null default true,
+  expire_le  timestamptz,
+  note       text check (char_length(note) <= 120),
+  cree_le    timestamptz not null default now(),
+  cree_par   uuid
+);
+alter table public.codes_promo enable row level security;
+drop policy if exists "promo_admin" on public.codes_promo;
+create policy "promo_admin" on public.codes_promo for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+-- L'administrateur gère tous les codes d'accès (création, suppression)
+drop policy if exists "codes_admin_tout" on public.codes_activation;
+create policy "codes_admin_tout" on public.codes_activation for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+-- L'application ne lit jamais la table : elle demande seulement le pourcentage d'un code précis.
+create or replace function public.verifier_promo(p_code text)
+returns table (reduction int) language sql security definer set search_path = public as $$
+  select c.reduction from public.codes_promo c
+   where c.code = upper(trim(p_code)) and c.actif and (c.expire_le is null or c.expire_le > now());
+$$;
+revoke all on function public.verifier_promo(text) from public;
+grant execute on function public.verifier_promo(text) to anon, authenticated;
+
 -- 7. Contenu de départ (ne remplace rien d'existant)
 insert into public.contenu (cle, valeur) values
   ('annonce',     '{"actif": false, "niveau": "info", "titre": {"fr": "", "en": ""}, "texte": {"fr": "", "en": ""}}'),

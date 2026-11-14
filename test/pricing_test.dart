@@ -66,4 +66,13 @@ void main() {
     expect(fcfa(2000), '2 000 FCFA');
     expect(fcfa(44200), '44 200 FCFA');
   });
+
+  test('code de réduction : pourcentage, arrondi aux 50 FCFA au-dessus', () {
+    expect(discounted(2000, 0), 2000);
+    expect(discounted(2000, 10), 1800);
+    expect(discounted(4500, 20), 3600);
+    expect(discounted(12000, 15), 10200);
+    expect(discounted(2500, 33), 1700); // 1675 -> 1700
+    expect(discounted(5000, 100), 0);
+  });
 }
