@@ -15,6 +15,22 @@ EN_FERME = {
 "Code de réduction":"Discount code","Code promo":"Promo code","Appliquer":"Apply",
 "Code d'activation ou code d'accès":"Activation or access code",
 "Code de réduction invalide ou expiré.":"Discount code invalid or expired.",
+# --- paiement Mobile Money (Campay)
+"Payer par Mobile Money":"Pay by Mobile Money","Choisissez une formule ci-dessus pour payer avec MTN Mobile Money ou Orange Money.":"Choose a plan above to pay with MTN Mobile Money or Orange Money.",
+"Durée":"Duration","1 mois":"1 month","Numéro MTN ou Orange":"MTN or Orange number","J'ai un code d'accès":"I have an access code",
+"Un compte Google connecté est nécessaire. La formule s'active toute seule dès que le paiement est confirmé.":"A signed-in Google account is required. The plan activates by itself as soon as the payment is confirmed.",
+"Validez le paiement sur votre téléphone avec votre code secret. Cela peut prendre une minute.":"Confirm the payment on your phone with your secret code. It can take a minute.",
+"Connectez-vous avec Google (onglet Profil) pour payer.":"Sign in with Google (Profile tab) to pay.",
+"Connectez-vous avec Google pour payer.":"Sign in with Google to pay.",
+"Le paiement a échoué. Réessayez.":"The payment failed. Please try again.",
+"Paiement refusé ou annulé.":"Payment refused or cancelled.",
+"Nous n'avons pas encore reçu la confirmation. Si le montant a été débité, votre formule sera activée automatiquement dans quelques minutes.":"We have not received the confirmation yet. If the amount was debited, your plan will be activated automatically in a few minutes.",
+"Paiement reçu. Votre formule est active. Merci !":"Payment received. Your plan is active. Thank you!",
+"Numéro invalide : entrez un numéro MTN ou Orange à 9 chiffres (6XXXXXXXX).":"Invalid number: enter a 9-digit MTN or Orange number (6XXXXXXXX).",
+"Trop de demandes en cours. Patientez quelques minutes.":"Too many requests in progress. Please wait a few minutes.",
+"Le paiement n'a pas pu démarrer. Réessayez dans un instant.":"The payment could not start. Please try again in a moment.",
+"La gestion de ferme n'est pas encore en vente.":"Farm management is not on sale yet.",
+"Cette formule est sur devis.":"This plan is available on quote.",
 # --- gestion de ferme
 "La gestion de ferme est incluse dans les formules Gestion et Pack complet.":"Farm management is included in the Management and Complete pack plans.",
 "Poules mortes":"Dead hens","Œufs ramassés":"Eggs collected","Dont cassés ou déclassés":"Of which cracked or downgraded","œufs":"eggs",
@@ -45,6 +61,8 @@ EN_FERME = {
 "Glissez vers la gauche pour supprimer une ligne. Le délai d'attente est celui de la notice du produit ; en cas de doute, demandez à un vétérinaire.":"Swipe left to delete a line. The withdrawal period is the one on the product leaflet; if in doubt, ask a vet.",
 }
 TEMPLATES_FERME = {
+"Payer {0}":"Pay {0}","{0} mois":"{0} months",
+"Validez le paiement sur votre téléphone avec votre code secret. Si rien n'apparaît, composez {0}.":"Confirm the payment on your phone with your secret code. If nothing appears, dial {0}.",
 "Code {0} appliqué : −{1} % sur les prix affichés.":"Code {0} applied: −{1} % on the prices shown.",
 "{0} achats":"{0} purchases","{0} clients":"{0} customers",
 "Soit {0} FCFA par oiseau vivant":"That is {0} FCFA per live bird",

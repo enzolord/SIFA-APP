@@ -213,6 +213,13 @@ begin
       'actions',      coalesce((select jsonb_object_agg(nom, n) from
                         (select props->>'nom' as nom, count(*) n from ev where nom = 'action' and props->>'nom' like 'ferme:%' group by 1) x), '{}'::jsonb)
     ),
+    'paiements', jsonb_build_object(
+      'reussis_periode',  (select count(*) from paiements where statut = 'reussi' and maj_le >= dep),
+      'revenu_periode',   coalesce((select sum(montant) from paiements where statut = 'reussi' and maj_le >= dep), 0),
+      'revenu_total',     coalesce((select sum(montant) from paiements where statut = 'reussi'), 0),
+      'en_attente',       (select count(*) from paiements where statut = 'en_attente' and cree_le > now() - interval '1 hour'),
+      'echoues_periode',  (select count(*) from paiements where statut = 'echoue' and maj_le >= dep)
+    ),
     'pharmacies', jsonb_build_object(
       'actives',   (select count(*) from pharmacies where actif),
       'par_stock', coalesce((select jsonb_object_agg(coalesce(stock, 'inconnu'), n) from (select stock, count(*) n from pharmacies where actif group by 1) x), '{}'::jsonb),
@@ -362,6 +369,46 @@ returns table (reduction int) language sql security definer set search_path = pu
 $$;
 revoke all on function public.verifier_promo(text) from public;
 grant execute on function public.verifier_promo(text) to anon, authenticated;
+
+-- 6d. Paiements Mobile Money par Campay
+--     Créés et mis à jour uniquement par les fonctions « campay-paiement » et « campay-webhook » (clé de service).
+create table if not exists public.paiements (
+  id               uuid primary key default gen_random_uuid(),
+  user_id          uuid not null references public.profiles(id) on delete cascade,
+  offre            text not null check (offre ~ '^[a-z0-9_]{3,40}$'),
+  mois             int  not null default 1 check (mois between 1 and 12),
+  prix_base        int  not null check (prix_base >= 0),     -- prix par mois avant réduction
+  reduction        int  not null default 0 check (reduction between 0 and 100),
+  code_promo       text,
+  montant          int  not null check (montant >= 0),       -- FCFA réellement demandés (tous les mois)
+  telephone        text,
+  statut           text not null default 'en_attente' check (statut in ('en_attente','reussi','echoue')),
+  campay_reference text unique,
+  operateur        text,
+  raison           text,
+  cree_le          timestamptz not null default now(),
+  maj_le           timestamptz not null default now()
+);
+create index if not exists paiements_user_idx on public.paiements(user_id, cree_le desc);
+alter table public.paiements enable row level security;
+drop policy if exists "paiements_lecture" on public.paiements;
+create policy "paiements_lecture" on public.paiements for select to authenticated
+  using (user_id = auth.uid() or public.is_admin());
+
+-- Active la formule d'un paiement réussi (une seule fois). Réservé aux fonctions serveur.
+create or replace function public.activer_paiement(p_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare p public.paiements%rowtype;
+begin
+  select * into p from public.paiements where id = p_id for update;
+  if not found or p.statut = 'reussi' then return; end if;
+  update public.paiements set statut = 'reussi', raison = null, maj_le = now() where id = p_id;
+  update public.abonnements set statut = 'expire' where user_id = p.user_id and statut = 'actif';
+  insert into public.abonnements (user_id, formule, analyses_restantes, fin, reference_paiement)
+  values (p.user_id, p.offre, null, now() + make_interval(months => p.mois), coalesce(p.campay_reference, p.id::text));
+end $$;
+revoke all on function public.activer_paiement(uuid) from public, anon, authenticated;
+grant execute on function public.activer_paiement(uuid) to service_role;
 
 -- 7. Contenu de départ (ne remplace rien d'existant)
 insert into public.contenu (cle, valeur) values

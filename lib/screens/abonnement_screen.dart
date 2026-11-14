@@ -4,6 +4,7 @@ import '../data/pricing.dart';
 import '../services/analytics.dart';
 import '../services/auth_service.dart';
 import '../services/entitlement.dart';
+import '../services/payment_service.dart';
 import '../services/remote_content.dart';
 import '../theme/colors.dart';
 import '../l10n/l10n.dart';
@@ -27,10 +28,68 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
   void dispose() {
     _code.dispose();
     _promo.dispose();
+    _phone.dispose();
     super.dispose();
   }
 
   bool _busy = false;
+
+  // Paiement Mobile Money (Campay)
+  final _phone = TextEditingController();
+  int _months = 1;
+  bool _paying = false;
+  String? _payInfo; // consigne affichée pendant l'attente
+  String? _payOk;
+  String? _payErr;
+
+  Future<void> _pay() async {
+    final offer = _choice;
+    if (offer == null || _paying) return;
+    setState(() {
+      _paying = true;
+      _payErr = null;
+      _payOk = null;
+      _payInfo = null;
+    });
+    try {
+      final s = await PaymentService.start(offer: offer, months: _months, phone: _phone.text, promo: _promoCode);
+      Analytics.instance.action('paiement_demarre');
+      var status = s.status;
+      if (status == 'en_attente') {
+        if (mounted) {
+          setState(() => _payInfo = s.ussd == null
+              ? tr('Validez le paiement sur votre téléphone avec votre code secret. Cela peut prendre une minute.')
+              : trf('Validez le paiement sur votre téléphone avec votre code secret. Si rien n\'apparaît, composez {0}.', [s.ussd!]));
+        }
+        String? reason;
+        for (var i = 0; i < 45 && status == 'en_attente' && mounted; i++) {
+          await Future<void>.delayed(const Duration(seconds: 4));
+          try {
+            (status, reason) = await PaymentService.check(s.id);
+          } on PaymentException {
+            // coupure passagère : on réessaie au tour suivant
+          }
+        }
+        if (status == 'echoue') throw PaymentException(reason == null || reason.isEmpty ? 'Paiement refusé ou annulé.' : reason);
+      }
+      if (status == 'reussi') {
+        Analytics.instance.action('paiement_reussi');
+        await Entitlement.instance.refresh();
+        if (mounted) setState(() => _payOk = 'Paiement reçu. Votre formule est active. Merci !');
+      } else if (mounted) {
+        setState(() => _payErr = 'Nous n\'avons pas encore reçu la confirmation. Si le montant a été débité, votre formule sera activée automatiquement dans quelques minutes.');
+      }
+    } on PaymentException catch (e) {
+      if (mounted) setState(() => _payErr = e.message);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _paying = false;
+          _payInfo = null;
+        });
+      }
+    }
+  }
 
   // Code de réduction appliqué (pourcentage) : il ne change que le prix affiché.
   final _promo = TextEditingController();
@@ -85,7 +144,7 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
     }
     setState(() {
       _busy = true;
-      _msg = null;
+      _payErr = null;
     });
     try {
       await client.rpc('activer_code', params: {'p_code': code});
@@ -365,18 +424,47 @@ class _AbonnementScreenState extends State<AbonnementScreen> {
             ),
           if (_promoMsg != null) Padding(padding: const EdgeInsets.only(top: 8), child: Tx(_promoMsg!, style: t.bodyMedium?.copyWith(color: SifaColors.warn))),
           const SizedBox(height: 20),
-          Tx('Comment payer', style: t.titleMedium),
+          Tx('Payer par Mobile Money', style: t.titleMedium),
           const SizedBox(height: 8),
-          if (pay.isNotEmpty)
-            Text(pay)
-          else
-            const Tx('1. Envoyez le montant par Mobile Money au numéro indiqué.\n'
-                '2. Notre équipe confirme votre paiement.\n'
-                '3. Vous recevez un code et l\'entrez ci-dessous.'),
-          if (chosen != null) ...[
-            const SizedBox(height: 8),
-            Text(trf('Indiquez en référence : {0}', [_promoCode.isEmpty ? chosen.$1 : '${chosen.$1} + $_promoCode']), style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+          if (chosen == null)
+            const Tx('Choisissez une formule ci-dessus pour payer avec MTN Mobile Money ou Orange Money.')
+          else ...[
+            Row(children: [
+              Expanded(
+                child: DropdownButtonFormField<int>(
+                  value: _months,
+                  decoration: InputDecoration(labelText: tr('Durée'), border: const OutlineInputBorder()),
+                  items: [for (final m in const [1, 3, 6, 12]) DropdownMenuItem(value: m, child: Text(m == 1 ? tr('1 mois') : trf('{0} mois', [m])))],
+                  onChanged: _paying ? null : (v) => setState(() => _months = v ?? 1),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _phone,
+              enabled: !_paying,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(labelText: tr('Numéro MTN ou Orange'), hintText: '6XX XX XX XX', prefixText: '+237 ', border: const OutlineInputBorder()),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(54)),
+              onPressed: _paying ? null : _pay,
+              icon: _paying ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.phone_android_rounded),
+              label: Text(trf('Payer {0}', [fcfa(discounted(chosen.$2 ?? 0, _discount) * _months)])),
+            ),
+            if (_payInfo != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(_payInfo!, style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w600))),
+            if (_payErr != null) Padding(padding: const EdgeInsets.only(top: 10), child: Tx(_payErr!, style: t.bodyMedium?.copyWith(color: SifaColors.warn))),
+            if (_payOk != null) Padding(padding: const EdgeInsets.only(top: 10), child: Tx(_payOk!, style: t.bodyMedium?.copyWith(color: SifaColors.ok, fontWeight: FontWeight.w600))),
+            const SizedBox(height: 6),
+            Tx('Un compte Google connecté est nécessaire. La formule s\'active toute seule dès que le paiement est confirmé.', style: t.bodySmall),
           ],
+          if (pay.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(pay, style: t.bodySmall),
+          ],
+          const SizedBox(height: 20),
+          Tx("J'ai un code d'accès", style: t.titleMedium),
           const SizedBox(height: 16),
           TextField(
             controller: _code,

@@ -4,10 +4,11 @@ import { Armed, Async, BiField, Card, Grid, Note, Pill, SubTabs, bi, useAsync, u
 import { MALADIES, L, fdate, genCode, getC, must, sb, setC } from '../lib.js';
 import { useSession } from '../session.jsx';
 import Promo from './Promo.jsx';
+import Paiements from './Paiements.jsx';
 import BASE from '../data/fichesBase.json';
 import { catalogue, packPrice, fcfa, offers, PACKS, TIERS, DEFAULT_TARIFS } from '../pricing.js';
 
-const TABS = [['/contenu', 'Annonce et maintenance', true], ['/contenu/tarifs', 'Tarifs'], ['/contenu/promo', 'Codes promo'], ['/contenu/formules', 'Paiement'], ['/contenu/pharmacies', 'Pharmacies'], ['/contenu/fiches', 'Fiches maladies']];
+const TABS = [['/contenu', 'Annonce et maintenance', true], ['/contenu/tarifs', 'Tarifs'], ['/contenu/promo', 'Codes promo'], ['/contenu/formules', 'Paiements'], ['/contenu/pharmacies', 'Pharmacies'], ['/contenu/fiches', 'Fiches maladies']];
 const clone = o => JSON.parse(JSON.stringify(o));
 
 function Announce() {
@@ -42,14 +43,14 @@ function Plans() {
   const toast = useToast();
   const st = useAsync(() => getC('formules'), []);
   return <>
-    <Note style={{ marginBottom: 14 }}>Les codes d’activation et de réduction se créent maintenant dans l’onglet <b>Codes promo</b>.</Note>
+    <Paiements />
     <Async state={st}>{init => <PlansForm init={init} toast={toast} />}</Async>
   </>;
 }
 function PlansForm({ init, toast }) {
   const [F, setF] = useState(() => ({ ...init, paiement: bi(init.paiement?.fr, init.paiement?.en) }));
-  return <Card title="Comment payer" sub="Texte affiché dans l’écran « Formules » : numéro Mobile Money, étapes, contact.">
-    <BiField label="Instructions de paiement" value={F.paiement} area onChange={v => setF({ ...F, paiement: v })} />
+  return <Card title="Aide affichée sous le bouton Payer" sub="Facultatif : contact du support, conditions de remboursement… Laissez vide s’il n’y a rien à ajouter.">
+    <BiField label="Texte d’aide" value={F.paiement} area onChange={v => setF({ ...F, paiement: v })} />
     <div className="actions"><button className="btn" type="button" onClick={async () => { try { await setC('formules', F); toast('Instructions enregistrées.'); } catch (e) { toast('Enregistrement : ' + e.message, true); } }}>Enregistrer</button></div>
   </Card>;
 }

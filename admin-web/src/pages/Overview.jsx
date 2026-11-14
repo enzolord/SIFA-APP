@@ -39,7 +39,7 @@ function Todos({ s }) {
 
 export default function Overview() {
   return <WithStats>{s => {
-    const u = s.utilisateurs, q = s.qualite, a = s.analyses, qt = s.quota || { bloques_periode: 0, bloques_total: 0 };
+    const u = s.utilisateurs, q = s.qualite, a = s.analyses, qt = s.quota || { bloques_periode: 0, bloques_total: 0 }, pm = s.paiements || { revenu_periode: 0, reussis_periode: 0 };
     const okRate = ratio(q.justes, q.retours), stick = ratio(u.actifs_24h, u.actifs_30j);
     const labels = s.serie.map(r => r.jour.slice(5).split('-').reverse().join('/'));
     const keys = MALADIES.filter(k => a.par_maladie[k]);
@@ -53,6 +53,7 @@ export default function Overview() {
         <Kpi label="Mauvaises réponses" value={okRate == null ? '—' : pct(q.faux, q.retours)} detail={`${nf(q.faux)} résultats jugés faux`} tone={okRate != null && okRate < .6 ? 'bad' : ''} />
         <Kpi label="Alertes graves" value={nf(a.alertes)} detail="Signes nerveux ou mortalité brutale" />
         <Kpi label="Bloqués par le quota" value={nf(qt.bloques_periode)} detail={`${nf(qt.bloques_total)} au total · ont atteint leur limite d’analyses`} tone={qt.bloques_periode > 0 ? 'warn' : ''} />
+        <Kpi label="Encaissé (période)" value={`${nf(pm.revenu_periode)} FCFA`} detail={`${nf(pm.reussis_periode)} paiements Campay réussis`} tone={pm.revenu_periode > 0 ? 'good' : ''} />
         <Kpi label="Fidélité" value={stick == null ? '—' : pct(u.actifs_24h, u.actifs_30j)} detail="Actifs du jour / actifs du mois" />
       </Kpis>
       <Grid>
