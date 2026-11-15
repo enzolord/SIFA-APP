@@ -13,6 +13,7 @@ import '../widgets/section_header.dart';
 import '../widgets/sifa_mark.dart';
 import '../widgets/status_chip.dart';
 import 'community/post_detail_screen.dart';
+import 'assistant_screen.dart';
 import 'ferme/ferme_hub.dart';
 import 'pharmacie_screen.dart';
 import 'prophylaxie_screen.dart';
@@ -69,6 +70,19 @@ class HomeScreen extends StatelessWidget {
             _ServiceTile('Conseils', 'Bons réflexes d’élevage', Icons.menu_book_rounded, const Color(0xFF8A6A00),
                 () => _push(context, const TipsScreen())),
           ],
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.mic_rounded, color: SifaColors.brand),
+            title: const Tx('Assistant vocal'),
+            subtitle: const Tx('Posez vos questions à voix haute, en français ou en anglais'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Analytics.instance.action('tuile:Assistant vocal');
+              _push(context, const AssistantScreen());
+            },
+          ),
         ),
         const SectionHeader('Dernière analyse'),
         ListenableBuilder(

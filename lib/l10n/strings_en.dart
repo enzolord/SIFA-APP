@@ -661,6 +661,22 @@ const Map<String, String> enStrings = {
   "Ne vendez ni œufs ni poulets de ces bandes avant la date indiquée.": "Do not sell eggs or chickens from these flocks before the date shown.",
   "Aucun vaccin ni traitement enregistré.": "No vaccine or treatment recorded.",
   "Glissez vers la gauche pour supprimer une ligne. Le délai d'attente est celui de la notice du produit ; en cas de doute, demandez à un vétérinaire.": "Swipe left to delete a line. The withdrawal period is the one on the product leaflet; if in doubt, ask a vet.",
+  "Assistant vocal": "Voice assistant",
+  "Posez vos questions à voix haute, en français ou en anglais": "Ask your questions out loud, in French or English",
+  "Activer la voix": "Turn voice on",
+  "Couper la voix": "Turn voice off",
+  "Mains libres": "Hands-free",
+  "Le micro se rouvre après chaque réponse": "The microphone reopens after each answer",
+  "Arrêter l'écoute": "Stop listening",
+  "Arrêter la lecture": "Stop reading aloud",
+  "Parler": "Speak",
+  "Reconnaissance vocale indisponible : autorisez le micro dans les réglages, ou écrivez votre question.": "Speech recognition is unavailable: allow the microphone in settings, or type your question.",
+  "Le micro est refusé. Autorisez-le dans les réglages du téléphone, ou écrivez votre question.": "The microphone is blocked. Allow it in the phone settings, or type your question.",
+  "Je n'ai rien entendu. Touchez le micro et parlez de nouveau.": "I didn't hear anything. Tap the microphone and speak again.",
+  "Voix indisponible pour cette langue. Installez-la dans Réglages > Synthèse vocale.": "Voice not available for this language. Install it in Settings > Text-to-speech.",
+  "L'assistant est très sollicité. Réessayez dans une minute.": "The assistant is very busy. Try again in a minute.",
+  "L'assistant est indisponible pour le moment.": "The assistant is unavailable right now.",
+  "Pas de connexion. Vérifiez votre réseau et réessayez.": "No connection. Check your network and try again.",
 };
 
 const Map<String, String> enTemplates = {

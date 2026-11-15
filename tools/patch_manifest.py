@@ -17,6 +17,7 @@ perms = [
     "android.permission.INTERNET",
     "android.permission.ACCESS_FINE_LOCATION",
     "android.permission.ACCESS_COARSE_LOCATION",
+    "android.permission.RECORD_AUDIO",
 ]
 add = "".join(f'    <uses-permission android:name="{x}"/>\n' for x in perms if x not in s)
 if add:
@@ -25,6 +26,14 @@ if "android.intent.action.DIAL" not in s:
     q = """    <queries>
         <intent><action android:name="android.intent.action.VIEW"/><data android:scheme="https"/></intent>
         <intent><action android:name="android.intent.action.DIAL"/><data android:scheme="tel"/></intent>
+    </queries>
+"""
+    s = s.replace("<application", q + "    <application", 1)
+# Assistant vocal : reconnaissance vocale (micro) et synthèse vocale, visibles depuis Android 11.
+if "android.speech.RecognitionService" not in s:
+    q = """    <queries>
+        <intent><action android:name="android.speech.RecognitionService"/></intent>
+        <intent><action android:name="android.intent.action.TTS_SERVICE"/></intent>
     </queries>
 """
     s = s.replace("<application", q + "    <application", 1)

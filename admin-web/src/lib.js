@@ -40,7 +40,7 @@ export const L = {
   },
   action: {
     appel_pharmacie: 'Appel d’une pharmacie', itineraire_maps: 'Itinéraire (Google Maps)', itineraire_carte: 'Itinéraire sur la carte',
-    'ferme:sante_ajout': 'Ferme : soin ajouté', 'ferme:vente': 'Ferme : vente saisie', 'ferme:depense': 'Ferme : dépense saisie', 'ferme:client_ajout': 'Ferme : client ajouté', 'ferme:rapport_copie': 'Ferme : rapport copié', 'ferme:verrouille': 'Ferme : accès verrouillé (formule)',
+    'ferme:sante_ajout': 'Ferme : soin ajouté', 'assistant:question': 'Assistant vocal : question posée', 'ferme:vente': 'Ferme : vente saisie', 'ferme:depense': 'Ferme : dépense saisie', 'ferme:client_ajout': 'Ferme : client ajouté', 'ferme:rapport_copie': 'Ferme : rapport copié', 'ferme:verrouille': 'Ferme : accès verrouillé (formule)',
     connexion_google: 'Connexion Google', code_active: 'Code d’activation utilisé', photo_partagee: 'Photo partagée pour améliorer SIFA',
   },
 };

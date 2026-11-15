@@ -185,3 +185,7 @@ TEMPLATES.update(TEMPLATES_SANTE)
 from translations_en_ferme import EN_FERME, TEMPLATES_FERME
 EN.update(EN_FERME)
 TEMPLATES.update(TEMPLATES_FERME)
+
+# Assistant vocal
+from translations_en_voix import EN_VOIX
+EN.update(EN_VOIX)
