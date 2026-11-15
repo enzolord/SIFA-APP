@@ -26,7 +26,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
   final _ctl = TextEditingController();
   final _scroll = ScrollController();
 
-  String _lang = L10n.lang;
+  String _lang = L10n.instance.lang;
   bool _sttReady = false;
   bool _listening = false;
   bool _thinking = false;
