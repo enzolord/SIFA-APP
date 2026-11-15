@@ -203,6 +203,12 @@ begin
                             (select coalesce(props->>'offre', 'inconnu') as offre, count(distinct appareil) n from ev where nom = 'quota_atteint' group by 1) x), '{}'::jsonb),
       'ferme_verrouillee',(select count(distinct appareil) from ev where nom = 'action' and props->>'nom' = 'ferme:verrouille')
     ),
+    'assistant', jsonb_build_object(
+      'questions_periode', (select count(*) from assistant_questions where cree_le >= dep),
+      'questions_total',   (select count(*) from assistant_questions),
+      'demandeurs_periode',(select count(distinct coalesce(user_id::text, appareil)) from assistant_questions where cree_le >= dep),
+      'bloques_periode',   (select count(distinct appareil) from ev where nom = 'quota_atteint' and props->>'offre' = 'assistant')
+    ),
     'ferme', jsonb_build_object(
       'utilisateurs', (select count(distinct appareil) from ev where nom = 'ecran' and props->>'nom' in
                         ('BandsScreen','BandDetailScreen','EntryScreen','PerformanceScreen','HealthScreen','StocksScreen','FinancesScreen','ClientsScreen','ProfitScreen','ReportScreen','TasksScreen')),
@@ -429,3 +435,59 @@ on conflict (cle) do nothing;
 --      update public.profiles set role = 'admin'
 --       where id = (select id from auth.users where email = 'VOTRE_EMAIL');
 -- ============================================================
+
+-- 6e. Assistant vocal : compteur de questions tenu sur le serveur (résiste à la réinstallation)
+--     Une ligne par question. Compte par compte Google quand l'éleveur est connecté, et par appareil
+--     (identifiant haché, qui survit à la réinstallation) pour les questions gratuites.
+--     Écrit uniquement par la fonction « assistant-sifa » (clé de service).
+create table if not exists public.assistant_questions (
+  id        bigint generated always as identity primary key,
+  user_id   uuid references public.profiles(id) on delete set null,
+  appareil  text check (appareil is null or char_length(appareil) <= 80),
+  cree_le   timestamptz not null default now()
+);
+create index if not exists assistant_questions_user on public.assistant_questions (user_id, cree_le);
+create index if not exists assistant_questions_appareil on public.assistant_questions (appareil);
+alter table public.assistant_questions enable row level security;
+drop policy if exists "assistant_admin_lecture" on public.assistant_questions;
+create policy "assistant_admin_lecture" on public.assistant_questions for select to authenticated using (public.is_admin());
+
+-- Questions déjà posées : à vie pour le quota gratuit (compte OU appareil), depuis le début de la période pour une formule.
+create or replace function public.assistant_utilise(p_user uuid, p_appareil text, p_gratuit boolean, p_depuis timestamptz)
+returns int language sql stable security definer set search_path = public as $$
+  select count(*)::int from public.assistant_questions q
+   where case when p_gratuit
+              then (p_user is not null and q.user_id = p_user) or (p_appareil is not null and q.appareil = p_appareil)
+              else p_user is not null and q.user_id = p_user and q.cree_le >= coalesce(p_depuis, '-infinity')
+         end;
+$$;
+
+-- Réserve une question si la limite n'est pas atteinte (verrou : deux appels simultanés ne dépassent pas la limite).
+-- question_id est NULL quand la limite est atteinte.
+create or replace function public.assistant_reserver(p_user uuid, p_appareil text, p_gratuit boolean, p_depuis timestamptz, p_limite int)
+returns table (question_id bigint, utilise int) language plpgsql security definer set search_path = public as $$
+declare n int; nid bigint;
+begin
+  if p_user is not null then perform pg_advisory_xact_lock(hashtext('assistant:' || p_user::text)); end if;
+  if p_appareil is not null then perform pg_advisory_xact_lock(hashtext('assistant:' || p_appareil)); end if;
+  n := public.assistant_utilise(p_user, p_appareil, p_gratuit, p_depuis);
+  if n >= p_limite then
+    return query select null::bigint, n;
+    return;
+  end if;
+  insert into public.assistant_questions (user_id, appareil) values (p_user, p_appareil) returning id into nid;
+  return query select nid, n + 1;
+end $$;
+
+-- Rend une question quand Gemini n'a pas répondu (l'éleveur ne la perd pas).
+create or replace function public.assistant_rendre(p_id bigint)
+returns void language sql security definer set search_path = public as $$
+  delete from public.assistant_questions where id = p_id;
+$$;
+
+revoke all on function public.assistant_utilise(uuid, text, boolean, timestamptz) from public, anon, authenticated;
+revoke all on function public.assistant_reserver(uuid, text, boolean, timestamptz, int) from public, anon, authenticated;
+revoke all on function public.assistant_rendre(bigint) from public, anon, authenticated;
+grant execute on function public.assistant_utilise(uuid, text, boolean, timestamptz) to service_role;
+grant execute on function public.assistant_reserver(uuid, text, boolean, timestamptz, int) to service_role;
+grant execute on function public.assistant_rendre(bigint) to service_role;

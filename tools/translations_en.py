@@ -187,5 +187,6 @@ EN.update(EN_FERME)
 TEMPLATES.update(TEMPLATES_FERME)
 
 # Assistant vocal
-from translations_en_voix import EN_VOIX
+from translations_en_voix import EN_VOIX, TEMPLATES_VOIX
 EN.update(EN_VOIX)
+TEMPLATES.update(TEMPLATES_VOIX)

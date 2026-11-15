@@ -677,6 +677,9 @@ const Map<String, String> enStrings = {
   "L'assistant est très sollicité. Réessayez dans une minute.": "The assistant is very busy. Try again in a minute.",
   "L'assistant est indisponible pour le moment.": "The assistant is unavailable right now.",
   "Pas de connexion. Vérifiez votre réseau et réessayez.": "No connection. Check your network and try again.",
+  "Vos questions gratuites sont terminées": "Your free questions are used up",
+  "Vous avez posé toutes les questions de votre formule": "You have asked all the questions in your plan",
+  "Choisissez une formule pour continuer à poser vos questions à l'assistant.": "Choose a plan to keep asking the assistant your questions.",
 };
 
 const Map<String, String> enTemplates = {
@@ -755,4 +758,6 @@ const Map<String, String> enTemplates = {
   "{0} · {1} : jusqu'au {2}": "{0} · {1}: until {2}",
   "{0} sur {1}": "{0} of {1}",
   "{0} · jour {1} · {2}": "{0} · day {1} · {2}",
+  "Questions gratuites restantes : {0} sur {1}": "Free questions left: {0} of {1}",
+  "Questions restantes ce mois : {0} sur {1}": "Questions left this month: {0} of {1}",
 };

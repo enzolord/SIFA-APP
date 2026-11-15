@@ -9,6 +9,7 @@ import '../services/analytics.dart';
 import '../services/voice_assistant.dart';
 import '../theme/colors.dart';
 import '../widgets/disclaimer.dart';
+import 'abonnement_screen.dart';
 
 /// Conversation vocale avec l'assistant SIFA, en français ou en anglais.
 /// L'éleveur parle (ou écrit), l'assistant répond par écrit et à voix haute.
@@ -36,6 +37,8 @@ class _AssistantScreenState extends State<AssistantScreen> {
   bool _sentThisRound = false;
   String _partial = '';
   String? _note;
+  AssistantQuota? _quota;
+  bool _quotaLogged = false;
 
   static const _suggestions = <String, List<String>>{
     'fr': [
@@ -54,6 +57,18 @@ class _AssistantScreenState extends State<AssistantScreen> {
   void initState() {
     super.initState();
     _initVoice();
+    _refreshQuota();
+  }
+
+  Future<void> _refreshQuota() async {
+    final q = await VoiceAssistant.status();
+    if (mounted && q != null) setState(() => _quota = q);
+  }
+
+  void _logBlocked() {
+    if (_quotaLogged) return;
+    _quotaLogged = true;
+    Analytics.instance.track('quota_atteint', {'offre': 'assistant', 'limite': _quota?.limit});
   }
 
   Future<void> _initVoice() async {
@@ -112,7 +127,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
   }
 
   Future<void> _listen() async {
-    if (_thinking) return;
+    if (_thinking || (_quota?.blocked ?? false)) return;
     await _tts.stop();
     if (!_sttReady && !await _initStt()) return;
     setState(() {
@@ -148,7 +163,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
 
   Future<void> _submit(String text) async {
     final q = text.trim();
-    if (q.isEmpty || _thinking) return;
+    if (q.isEmpty || _thinking || (_quota?.blocked ?? false)) return;
     _sentThisRound = true;
     _ctl.clear();
     Analytics.instance.action('assistant:question');
@@ -162,9 +177,19 @@ class _AssistantScreenState extends State<AssistantScreen> {
     try {
       final answer = await VoiceAssistant.ask(_turns, _lang);
       if (!mounted) return;
-      setState(() => _turns.add(ChatTurn(false, answer)));
+      setState(() {
+        _turns.add(ChatTurn(false, answer.text));
+        if (answer.quota != null) _quota = answer.quota;
+      });
       _scrollDown();
-      if (!_muted) await _speak(answer);
+      if (!_muted) await _speak(answer.text);
+    } on AssistantQuotaException catch (e) {
+      if (mounted) {
+        setState(() {
+          _quota = e.quota;
+          if (_turns.isNotEmpty && _turns.last.fromUser) _turns.removeLast();
+        });
+      }
     } on AssistantException catch (e) {
       if (mounted) setState(() => _note = e.message);
     } finally {
@@ -209,6 +234,36 @@ class _AssistantScreenState extends State<AssistantScreen> {
       _speaking = false;
       _partial = '';
     });
+  }
+
+  Widget _blockedPanel(BuildContext context) {
+    _logBlocked();
+    final t = Theme.of(context).textTheme;
+    final free = _quota?.free ?? true;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: SifaColors.yolkSoft, borderRadius: BorderRadius.circular(14)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Tx(free ? 'Vos questions gratuites sont terminées' : 'Vous avez posé toutes les questions de votre formule',
+            style: t.titleSmall?.copyWith(color: SifaColors.ink)),
+        const SizedBox(height: 4),
+        Tx(
+          free
+              ? "Choisissez une formule pour continuer à poser vos questions à l'assistant."
+              : 'Votre quota se renouvelle tous les 30 jours. Vous pouvez aussi passer à une formule plus grande.',
+          style: t.bodySmall?.copyWith(color: SifaColors.ink),
+        ),
+        const SizedBox(height: 10),
+        FilledButton(
+          onPressed: () => Navigator.of(context)
+              .push(MaterialPageRoute<void>(builder: (_) => const AbonnementScreen()))
+              .then((_) => _refreshQuota()),
+          child: const Tx('Voir les formules'),
+        ),
+      ]),
+    );
   }
 
   @override
@@ -278,6 +333,20 @@ class _AssistantScreenState extends State<AssistantScreen> {
                   ],
                 ),
         ),
+        if (_quota != null && !_quota!.blocked && _quota!.remaining != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Tx(
+                _quota!.free
+                    ? trf('Questions gratuites restantes : {0} sur {1}', [_quota!.remaining!, _quota!.limit!])
+                    : trf('Questions restantes ce mois : {0} sur {1}', [_quota!.remaining!, _quota!.limit!]),
+                style: t.bodySmall,
+              ),
+            ),
+          ),
+        if (_quota?.blocked ?? false) _blockedPanel(context),
         if (_note != null)
           Container(
             width: double.infinity,
@@ -316,7 +385,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
                 IconButton(
                   tooltip: tr('Envoyer'),
                   icon: const Icon(Icons.send_rounded),
-                  onPressed: _thinking ? null : () => _submit(_ctl.text),
+                  onPressed: (_thinking || (_quota?.blocked ?? false)) ? null : () => _submit(_ctl.text),
                 ),
               ]),
               const SizedBox(height: 10),
@@ -332,7 +401,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                _MicButton(listening: _listening, speaking: _speaking, busy: _thinking, onTap: _toggleMic),
+                _MicButton(listening: _listening, speaking: _speaking, busy: _thinking || (_quota?.blocked ?? false), onTap: _toggleMic),
               ]),
             ]),
           ),

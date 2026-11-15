@@ -13,6 +13,9 @@ export const TIERS = [
 ];
 export const DEFAULT_TARIFS = { prix: {}, reduction_pack: 15, compte_supplementaire: 500, analyses_supplementaires: 1000, analyses_gratuites: 5, gestion_disponible: false };
 
+// Questions de l'assistant vocal par formule (mêmes valeurs par défaut que supabase/functions/_shared/quotas.ts).
+export const DEFAULT_ASSISTANT = { gratuit: 10, analyse: { solo: 30, equipe: 100, pro: 300, entreprise: 1000 }, gestion_bas: 50, gestion_haut: 150, bonus_pack: 15 };
+
 const ok = v => typeof v === 'number' && v > 0;
 export function catalogue(tarifs = {}) {
   const prix = tarifs.prix || {};

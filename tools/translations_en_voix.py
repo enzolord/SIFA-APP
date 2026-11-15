@@ -13,4 +13,14 @@ EN_VOIX = {
 "L'assistant est très sollicité. Réessayez dans une minute.":"The assistant is very busy. Try again in a minute.",
 "L'assistant est indisponible pour le moment.":"The assistant is unavailable right now.",
 "Pas de connexion. Vérifiez votre réseau et réessayez.":"No connection. Check your network and try again.",
+# quota de questions
+"Vos questions gratuites sont terminées":"Your free questions are used up",
+"Vous avez posé toutes les questions de votre formule":"You have asked all the questions in your plan",
+"Choisissez une formule pour continuer à poser vos questions à l'assistant.":"Choose a plan to keep asking the assistant your questions.",
+"Votre quota se renouvelle tous les 30 jours. Vous pouvez aussi passer à une formule plus grande.":"Your quota renews every 30 days. You can also move to a bigger plan.",
+"Voir les formules":"See the plans",
+}
+TEMPLATES_VOIX = {
+"Questions gratuites restantes : {0} sur {1}":"Free questions left: {0} of {1}",
+"Questions restantes ce mois : {0} sur {1}":"Questions left this month: {0} of {1}",
 }

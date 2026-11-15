@@ -5,8 +5,18 @@
 // Secrets (les mêmes que verifier-fiente) : GEMINI_API_KEY, GEMINI_MODEL (facultatif),
 // SIFA_APP_KEY (facultatif : si défini, les appels sans cette clé sont refusés).
 // Déploiement : supabase functions deploy assistant-sifa --no-verify-jwt
-// Entrée : POST { "lang": "fr"|"en", "messages": [{ "role": "user"|"model", "text": "..." }] }
-// Sortie : { "reponse": "..." }
+//
+// Quota : compté ICI, dans la base (table assistant_questions), jamais sur le téléphone, donc il
+// résiste à la réinstallation. Compte Google si l'éleveur est connecté, sinon identifiant d'appareil.
+//   { "action": "statut", "appareil": "<id>" }
+//        -> { "limite": 10|null, "utilise": 3, "restant": 7|null, "gratuit": true, "offre": null }
+//   { "lang": "fr"|"en", "appareil": "<id>", "messages": [{ "role": "user"|"model", "text": "..." }] }
+//        -> { "reponse": "...", "limite": ..., "restant": ... }   ou 402 { "erreur": "quota", ... }
+
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { assistantLimit, windowStart, type AssistantCfg } from "../_shared/quotas.ts";
+
+const admin = () => createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 
 const MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-flash-lite-latest";
 const MAX_TURNS = 10;
@@ -35,6 +45,11 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+async function sha256(text: string): Promise<string> {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ erreur: "POST attendu" }, 405);
@@ -44,25 +59,71 @@ Deno.serve(async (req: Request) => {
   const geminiKey = Deno.env.get("GEMINI_API_KEY");
   if (!geminiKey) return json({ erreur: "GEMINI_API_KEY manquante" }, 503);
 
-  let lang = "fr";
-  let turns: { role: string; text: string }[] = [];
+  let b: Record<string, unknown>;
   try {
-    const b = await req.json();
-    lang = b.lang === "en" ? "en" : "fr";
-    if (Array.isArray(b.messages)) {
-      turns = b.messages
-        .filter((m: { role?: unknown; text?: unknown }) =>
-          (m?.role === "user" || m?.role === "model") && typeof m?.text === "string" && m.text.trim() !== ""
-        )
-        .slice(-MAX_TURNS)
-        .map((m: { role: string; text: string }) => ({ role: m.role, text: m.text.slice(0, MAX_CHARS) }));
-    }
+    b = await req.json();
   } catch (_) {
     return json({ erreur: "JSON invalide" }, 400);
+  }
+
+  // Qui pose la question : le compte Google (jeton de l'éleveur) et/ou l'appareil (identifiant haché).
+  const jwt = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
+  const anon = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { auth: { persistSession: false } });
+  const { data: u } = jwt ? await anon.auth.getUser(jwt) : { data: null };
+  const userId: string | null = u?.user?.id ?? null;
+  const rawDev = typeof b.appareil === "string" ? b.appareil.trim() : "";
+  const appareil = rawDev.length >= 8 && rawDev.length <= 200 ? "d:" + (await sha256("sifa:" + rawDev)).slice(0, 40) : null;
+  if (!userId && !appareil) return json({ erreur: "appareil inconnu" }, 400);
+
+  // Formule en cours et quota qui en découle.
+  const db = admin();
+  let offre: string | null = null;
+  let depuis: string | null = null;
+  if (userId) {
+    const { data: ab } = await db.from("abonnements").select("formule,debut,fin").eq("user_id", userId).eq("statut", "actif")
+      .order("debut", { ascending: false }).limit(1);
+    const a = ab?.[0];
+    if (a && (!a.fin || new Date(a.fin) > new Date())) {
+      offre = a.formule;
+      depuis = windowStart(new Date(a.debut), new Date()).toISOString();
+    }
+  }
+  const { data: tc } = await db.from("contenu").select("valeur").eq("cle", "tarifs").maybeSingle();
+  const cfg = ((tc?.valeur ?? {}) as { assistant?: AssistantCfg }).assistant ?? {};
+  const { limite, gratuit } = assistantLimit(offre, cfg);
+  const compte = { p_user: userId, p_appareil: appareil, p_gratuit: gratuit, p_depuis: gratuit ? null : depuis };
+
+  if (b.action === "statut") {
+    const { data: n, error } = await db.rpc("assistant_utilise", compte);
+    if (error) { console.error("assistant_utilise", error.message); return json({ erreur: "indisponible" }, 502); }
+    const utilise = Number(n) || 0;
+    return json({ limite, utilise, restant: limite === null ? null : Math.max(0, limite - utilise), gratuit, offre });
+  }
+
+  const lang = b.lang === "en" ? "en" : "fr";
+  let turns: { role: string; text: string }[] = [];
+  if (Array.isArray(b.messages)) {
+    turns = b.messages
+      .filter((m: { role?: unknown; text?: unknown }) =>
+        (m?.role === "user" || m?.role === "model") && typeof m?.text === "string" && m.text.trim() !== ""
+      )
+      .slice(-MAX_TURNS)
+      .map((m: { role: string; text: string }) => ({ role: m.role, text: m.text.slice(0, MAX_CHARS) }));
   }
   // Gemini veut une conversation qui commence et finit par un message de l'éleveur.
   while (turns.length && turns[0].role !== "user") turns.shift();
   if (!turns.length || turns[turns.length - 1].role !== "user") return json({ erreur: "message manquant" }, 400);
+
+  // On réserve la question AVANT d'appeler Gemini (verrou en base), et on la rend si Gemini échoue.
+  const { data: r0, error: e0 } = await db.rpc("assistant_reserver", { ...compte, p_limite: limite ?? 2147483647 });
+  const res = Array.isArray(r0) ? r0[0] : r0;
+  if (e0 || !res) { console.error("assistant_reserver", e0?.message); return json({ erreur: "indisponible" }, 502); }
+  if (res.question_id === null) {
+    return json({ erreur: "quota", limite, utilise: Number(res.utilise) || 0, restant: 0, gratuit, offre }, 402);
+  }
+  const qid = res.question_id as number;
+  const utilise = Number(res.utilise) || 0;
+  const rendre = () => db.rpc("assistant_rendre", { p_id: qid }).then(() => {}, () => {});
 
   const langRule = lang === "en"
     ? "Answer in English, whatever language the question is in."
@@ -79,12 +140,12 @@ Deno.serve(async (req: Request) => {
   };
 
   try {
-    const call = (b: unknown) => fetch(
+    const call = (g: unknown) => fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey },
-        body: JSON.stringify(b),
+        body: JSON.stringify(g),
         signal: AbortSignal.timeout(15_000),
       },
     );
@@ -95,14 +156,23 @@ Deno.serve(async (req: Request) => {
     }
     if (!r.ok) {
       console.error("Gemini", r.status, (await r.text()).slice(0, 300));
+      await rendre();
       return json({ erreur: "gemini", statut: r.status }, r.status === 429 ? 429 : 502);
     }
     const data = await r.json();
     const text = String(data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
-    if (!text) return json({ erreur: "réponse vide" }, 502);
-    return json({ reponse: text.slice(0, 1500) });
+    if (!text) { await rendre(); return json({ erreur: "réponse vide" }, 502); }
+    return json({
+      reponse: text.slice(0, 1500),
+      limite,
+      utilise,
+      restant: limite === null ? null : Math.max(0, limite - utilise),
+      gratuit,
+      offre,
+    });
   } catch (e) {
     console.error("assistant-sifa", e);
+    await rendre();
     return json({ erreur: "indisponible" }, 502);
   }
 });

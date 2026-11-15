@@ -6,7 +6,7 @@ import { useSession } from '../session.jsx';
 import Promo from './Promo.jsx';
 import Paiements from './Paiements.jsx';
 import BASE from '../data/fichesBase.json';
-import { catalogue, packPrice, fcfa, offers, PACKS, TIERS, DEFAULT_TARIFS } from '../pricing.js';
+import { catalogue, packPrice, fcfa, offers, PACKS, TIERS, DEFAULT_TARIFS, DEFAULT_ASSISTANT } from '../pricing.js';
 
 const TABS = [['/contenu', 'Annonce et maintenance', true], ['/contenu/tarifs', 'Tarifs'], ['/contenu/promo', 'Codes promo'], ['/contenu/formules', 'Paiements'], ['/contenu/pharmacies', 'Pharmacies'], ['/contenu/fiches', 'Fiches maladies']];
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -99,6 +99,26 @@ function TarifsForm({ init, toast }) {
       <label className="f">Réduction (%)</label><input type="text" inputMode="numeric" style={{ width: 100 }} value={T.reduction_pack} onChange={e => setT({ ...T, reduction_pack: Math.min(90, parseInt(e.target.value, 10) || 0) })} />
       <div className="tablewrap" style={{ marginTop: 12 }}><table><thead><tr><th>Combinaison</th><th className="num">Somme</th><th className="num">Pack complet</th><th className="num">Économie</th></tr></thead>
         <tbody>{[['solo', 1], ['solo', 2], ['equipe', 3], ['pro', 4], ['entreprise', 6]].map(([k, n]) => { const a = cat.packs.find(p => p.key === k), g = cat.tiers.find(x => x.n === n), pr = packPrice(a, g, cat.discount), sum = a.price + g.price; return <tr key={k + n}><td>{a.name.replace('Analyse ', '')} + {g.name}</td><td className="num">{fcfa(sum)}</td><td className="num"><b>{fcfa(pr)}</b></td><td className="num">{fcfa(sum - pr)}</td></tr>; })}</tbody></table></div>
+    </Card>
+    <Card title="Assistant vocal : questions par mois" sub="Compté sur le serveur, il résiste à la réinstallation. Le quota d’une formule se renouvelle tous les 30 jours à partir de son activation.">
+      {(() => {
+        const A = { ...DEFAULT_ASSISTANT, ...(T.assistant || {}), analyse: { ...DEFAULT_ASSISTANT.analyse, ...((T.assistant || {}).analyse || {}) } };
+        const setA = patch => setT({ ...T, assistant: { ...A, ...patch } });
+        const num = (v, max = 100000) => Math.min(max, parseInt(v, 10) || 0);
+        const box = (value, onChange) => <input type="text" inputMode="numeric" style={{ width: 100 }} value={value} onChange={e => onChange(e.target.value)} />;
+        return <>
+          <div className="row2">
+            <div><label className="f">Gratuit (à vie, sans formule)</label>{box(A.gratuit, v => setA({ gratuit: num(v) }))}</div>
+            <div><label className="f">Pack complet : bonus (%)</label>{box(A.bonus_pack, v => setA({ bonus_pack: num(v, 100) }))}</div>
+          </div>
+          <div className="tablewrap" style={{ marginTop: 10 }}><table><thead><tr><th>Formule</th><th>Questions / mois</th></tr></thead><tbody>
+            {cat.packs.map(p => <tr key={p.key}><td><b>{p.name}</b></td><td>{box(A.analyse[p.key], v => setA({ analyse: { ...A.analyse, [p.key]: num(v) } }))}</td></tr>)}
+            <tr><td><b>Gestion, paliers 1 à 3</b></td><td>{box(A.gestion_bas, v => setA({ gestion_bas: num(v) }))}</td></tr>
+            <tr><td><b>Gestion, paliers 4 à 7</b></td><td>{box(A.gestion_haut, v => setA({ gestion_haut: num(v) }))}</td></tr>
+          </tbody></table></div>
+          <p className="muted" style={{ margin: '8px 0 0' }}>Pack complet = quota de l’analyse + quota de la gestion, plus le bonus. Les anciennes formules et les codes d’accès « analyse » ou « complet » sont illimités.</p>
+        </>;
+      })()}
     </Card>
     <div className="actions"><button className="btn" type="button" onClick={async () => { try { await setC('tarifs', T); toast('Tarifs enregistrés : visibles dans l’application.'); } catch (e) { toast('Enregistrement : ' + e.message, true); } }}>Enregistrer les tarifs</button></div>
   </>;
