@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img;
 
 import '../config.dart';
 
@@ -40,9 +41,25 @@ class DroppingCheck {
   /// Remplaçable dans les tests.
   static http.Client client = http.Client();
 
+  /// Largeur de l'image envoyée à Gemini : assez pour reconnaître une fiente, et bien plus rapide
+  /// à envoyer et à analyser qu'une photo pleine taille.
+  static const sendWidth = 640;
+
+  /// Photo réduite (JPEG, largeur [sendWidth]) ; la photo d'origine si elle est déjà petite ou illisible.
+  static Uint8List shrink(Uint8List jpeg) {
+    try {
+      final im = img.decodeJpg(jpeg);
+      if (im == null || im.width <= sendWidth) return jpeg;
+      return Uint8List.fromList(img.encodeJpg(img.copyResize(im, width: sendWidth), quality: 75));
+    } catch (_) {
+      return jpeg;
+    }
+  }
+
   static Future<DroppingCheckResult> verify(Uint8List jpeg) async {
     if (!AppConfig.onlineCheck || jpeg.isEmpty) return DroppingCheckResult.unknown;
     try {
+      final small = await compute(shrink, jpeg);
       final r = await client
           .post(
             Uri.parse('${AppConfig.supabaseUrl}/functions/v1/verifier-fiente'),
@@ -51,7 +68,7 @@ class DroppingCheck {
               'apikey': AppConfig.supabaseKey,
               'Authorization': 'Bearer ${AppConfig.supabaseKey}',
             },
-            body: jsonEncode({'image': base64Encode(jpeg)}),
+            body: jsonEncode({'image': base64Encode(small)}),
           )
           .timeout(const Duration(seconds: 10));
       if (r.statusCode != 200) return DroppingCheckResult.unknown;

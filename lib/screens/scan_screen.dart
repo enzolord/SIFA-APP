@@ -35,10 +35,10 @@ class _ScanScreenState extends State<ScanScreen> {
       if (f == null) return;
       final bytes = await f.readAsBytes();
       // Gemini (en ligne) et le modèle embarqué travaillent en même temps ; sans réseau ou si
-      // Gemini tarde, le modèle embarqué décide seul.
+      // Gemini tarde (plus de 8 s), le modèle embarqué décide seul.
       final online = DroppingCheck.verify(bytes);
       final outcome = await AnalysisStore.instance.classifier.analyze(bytes);
-      final gem = await online.timeout(const Duration(seconds: 4), onTimeout: () => DroppingCheckResult.unknown);
+      final gem = await online.timeout(const Duration(seconds: 8), onTimeout: () => DroppingCheckResult.unknown);
       if (!mounted) return;
       final probs = outcome.probs;
       final rejectedByGemini = probs != null && gem.verdict == DroppingVerdict.notDropping;
